@@ -150,19 +150,19 @@ func main() {
       fmt.Fprintln(os.Stderr, "GetResponse requires 1 args")
       flag.Usage()
     }
-    arg4 := flag.Arg(1)
-    mbTrans5 := thrift.NewTMemoryBufferLen(len(arg4))
-    defer mbTrans5.Close()
-    _, err6 := mbTrans5.WriteString(arg4)
-    if err6 != nil {
+    arg6 := flag.Arg(1)
+    mbTrans7 := thrift.NewTMemoryBufferLen(len(arg6))
+    defer mbTrans7.Close()
+    _, err8 := mbTrans7.WriteString(arg6)
+    if err8 != nil {
       Usage()
       return
     }
-    factory7 := thrift.NewTJSONProtocolFactory()
-    jsProt8 := factory7.GetProtocol(mbTrans5)
+    factory9 := thrift.NewTJSONProtocolFactory()
+    jsProt10 := factory9.GetProtocol(mbTrans7)
     argvalue0 := example.NewExampleReq()
-    err9 := argvalue0.Read(jsProt8)
-    if err9 != nil {
+    err11 := argvalue0.Read(jsProt10)
+    if err11 != nil {
       Usage()
       return
     }

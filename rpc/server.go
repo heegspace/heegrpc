@@ -52,6 +52,8 @@ func (this *HeegServer) Processor(processor thrift.TProcessor) {
 		return
 	}
 
+	// Debug
+	// this.server = thrift.NewTSimpleServer4(processor, this.transport, this.transportFactory, thrift.NewTDebugProtocolFactory(this.protocolFactory, "[Debug]"))
 	this.server = thrift.NewTSimpleServer4(processor, this.transport, this.transportFactory, this.protocolFactory)
 
 	return

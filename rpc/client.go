@@ -66,5 +66,7 @@ func (this *HeegClient) Client(s2sname string) (thrift.TTransport, thrift.TProto
 		panic(err.Error())
 	}
 
+	// Debug
+	// return this.transport, thrift.NewTDebugProtocolFactory(this.protocolFactory, "Client")
 	return this.transport, this.protocolFactory
 }

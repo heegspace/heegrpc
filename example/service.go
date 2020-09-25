@@ -15,7 +15,10 @@ func (p *ExampleServiceHandle) GetResponse(ctx context.Context, req *example.Exa
 	v := &example.ExampleRes{
 		Rescode:  req.Reqcode,
 		Resvalue: "thrift test",
+		Map1:     make(map[string]string),
 	}
+	v.Map1["key1"] = "value1"
+	v.Map1["key2"] = "value2"
 
 	return v, nil
 }

@@ -8,6 +8,7 @@ struct example_req {
 struct example_res {
     1:i32       rescode
     2:string    resvalue
+    3:map<string,string> map1;
 }
 
 service example_service {
