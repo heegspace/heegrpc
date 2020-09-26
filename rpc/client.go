@@ -1,6 +1,8 @@
 package rpc
 
 import (
+	"time"
+
 	"github.com/apache/thrift/lib/go/thrift"
 )
 
@@ -58,6 +60,11 @@ func (this *HeegClient) Client(s2sname string) (thrift.TTransport, thrift.TProto
 	// get server addr by s2sname
 	// 主要是获取thrift服务的地址信息
 	tt, err := thrift.NewTSocket(this.option.Bind())
+	if nil != err {
+		panic(err.Error())
+	}
+	tt.SetTimeout(2 * time.Second)
+
 	this.transport, err = this.transportFactory.GetTransport(tt)
 	if err != nil {
 		panic(err.Error())
