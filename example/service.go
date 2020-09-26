@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	"heegrpc/example/gen-go/example"
 
-	"heegrpc"
+	"github.com/heegspace/heegrpc/example/gen-go/example"
+
+	"github.com/heegspace/heegrpc"
 
 	"github.com/apache/thrift/lib/go/thrift"
 )

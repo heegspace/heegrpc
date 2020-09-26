@@ -1,7 +1,7 @@
 package heegrpc
 
 import (
-	"heegrpc/rpc"
+	"github.com/heegspace/heegrpc/rpc"
 )
 
 var _heegServer *rpc.HeegServer
