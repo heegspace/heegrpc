@@ -1,8 +1,6 @@
 package rpc
 
 import (
-	"time"
-
 	"github.com/apache/thrift/lib/go/thrift"
 )
 
@@ -52,7 +50,7 @@ func (this *HeegClient) Close() {
 //
 // @param s2sname 	s2sname名字
 // @return 返回用于创建thrift client的信息
-func (this *HeegClient) Client(s2sname string) (thrift.TTransport, thrift.TProtocolFactory) {
+func (this *HeegClient) Client() (thrift.TTransport, thrift.TProtocolFactory) {
 	if !this.inited {
 		this.Init()
 	}
@@ -63,7 +61,6 @@ func (this *HeegClient) Client(s2sname string) (thrift.TTransport, thrift.TProto
 	if nil != err {
 		panic(err.Error())
 	}
-	tt.SetTimeout(2 * time.Second)
 
 	this.transport, err = this.transportFactory.GetTransport(tt)
 	if err != nil {

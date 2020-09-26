@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"github.com/heegspace/heegrpc/example/gen-go/example"
 
@@ -21,6 +22,7 @@ func (p *ExampleServiceHandle) GetResponse(ctx context.Context, req *example.Exa
 	v.Map1["key1"] = "value1"
 	v.Map1["key2"] = "value2"
 
+	time.Sleep(5 * time.Second)
 	return v, nil
 }
 

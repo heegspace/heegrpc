@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"heegrpc"
-	"heegrpc/example/gen-go/example"
+
+	"github.com/heegspace/heegrpc/example/gen-go/example"
+
+	"github.com/heegspace/heegrpc"
 )
 
 func main() {

@@ -1,7 +1,7 @@
 package heegrpc
 
 import (
-	"github.com/heegspace/heegrpc/rpc"
+	"heegrpc/rpc"
 )
 
 var _heegServer *rpc.HeegServer
@@ -19,7 +19,7 @@ func NewHeegRpcServer() *rpc.HeegServer {
 }
 
 // 创建rpc客户对象
-func NewHeegRpcClient() *rpc.HeegClient {
+func NewHeegRpcClient(s2sname string) *rpc.HeegClient {
 	if nil != _heegClient {
 		return _heegClient
 	}

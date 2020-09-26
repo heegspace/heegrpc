@@ -1,0 +1,9 @@
+
+[Service]
+Name = "datanode"
+S2sName = "datanode1"
+S2sKey = "786BC-564AD-09876-AD431-BCDA76"
+Port = 8099 
+
+[Client]
+CallTimeout = ""
