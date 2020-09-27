@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"heegrpc"
+	"heegrpc/rpc"
 	"sync"
 	"time"
 
@@ -43,11 +44,11 @@ func NewRegistry() *Registry {
 // 初始化s2sname请求客户端
 // 主要用于和s2sname服务进行通信
 // 
-func Init(option *heegrpc.Option) (err error) {
+func Init(option *rpc.Option) (err error) {
 	this.S2sname = option.S2sName
 	this.S2shost = option.Addr
 	this.S2spost = option.Port
-	
+
 	client := heegrpc.NewHeegRpcClient()
 	thclient := s2sname.NewS2snameServiceClientFactory(client.Client())
 

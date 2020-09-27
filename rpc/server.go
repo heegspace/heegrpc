@@ -16,10 +16,11 @@ type HeegServer struct {
 	protocolFactory  thrift.TProtocolFactory
 	transportFactory thrift.TTransportFactory
 
-	option Option
+	Option Option
 
 	//
-	inited bool
+	inited    bool
+	processor thrift.TProcessor
 }
 
 func NewHeegServer() *HeegServer {
@@ -31,7 +32,7 @@ func NewHeegServer() *HeegServer {
 	v := &HeegServer{
 		server: nil,
 		inited: false,
-		option: Option{
+		Option: Option{
 			Addr: addr.String(),
 			Port: 8088,
 		},
@@ -49,24 +50,24 @@ func (this *HeegServer) Init() (err error) {
 	this.transportFactory = thrift.NewTBufferedTransportFactory(8192)
 	this.transportFactory = thrift.NewTFramedTransportFactory(this.transportFactory)
 
-retry:
-	this.transport, err = thrift.NewTServerSocket(this.option.Bind())
+	this.transport, err = thrift.NewTServerSocket(this.Option.Bind())
 	if nil != err {
-		if strings.Contains(err.Error(), "address already in use") {
-			fmt.Println(this.option.Bind() + " already in use, 3s retry!")
-
-			time.Sleep(3 * time.Second)
-
-			this.option.Port += 1
-
-			goto retry
-		}
-
 		return
 	}
 
-	fmt.Println("Service start in " + this.option.Bind())
 	this.inited = true
+	return
+}
+
+func (this *HeegServer) retry() {
+	transport, err := thrift.NewTServerSocket(this.Option.Bind())
+	if nil != err {
+		return
+	}
+
+	this.transport = transport
+	this.server = thrift.NewTSimpleServer4(this.processor, this.transport, this.transportFactory, this.protocolFactory)
+
 	return
 }
 
@@ -74,6 +75,8 @@ func (this *HeegServer) Processor(processor thrift.TProcessor) {
 	if nil == processor {
 		return
 	}
+
+	this.processor = processor
 
 	// Debug
 	// this.server = thrift.NewTSimpleServer4(processor, this.transport, this.transportFactory, thrift.NewTDebugProtocolFactory(this.protocolFactory, "[Debug]"))
@@ -83,8 +86,20 @@ func (this *HeegServer) Processor(processor thrift.TProcessor) {
 }
 
 func (this *HeegServer) Run() (err error) {
+retry:
 	err = this.server.Serve()
 	if nil != err {
+		if strings.Contains(err.Error(), "address already in use") {
+			fmt.Println(this.Option.Bind() + " already in use, 3s retry!")
+
+			time.Sleep(3 * time.Second)
+
+			this.Option.Port += 1
+			this.retry()
+
+			goto retry
+		}
+
 		return
 	}
 

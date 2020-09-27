@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"github.com/heegspace/heegrpc/example/gen-go/example"
+	"heegrpc/example/gen-go/example"
 
-	"github.com/heegspace/heegrpc"
+	"heegrpc"
 
 	"github.com/apache/thrift/lib/go/thrift"
 )
@@ -48,6 +49,7 @@ func main() {
 
 	service.Processor(NewProcessor())
 	if err = service.Run(); nil != err {
+		fmt.Println("Err to here")
 		panic(err.Error())
 	}
 

@@ -20,7 +20,7 @@ func NewHeegClient() *HeegClient {
 		inited: false,
 		option: Option{
 			Addr: "0.0.0.0",
-			Port: 8088,
+			Port: 8089,
 		},
 	}
 
