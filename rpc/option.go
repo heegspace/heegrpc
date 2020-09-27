@@ -8,8 +8,9 @@ type Option struct {
 	Addr string
 	Port int
 
-	S2sName     string
-	S2sKey      string
+	S2sName string
+	S2sKey  string
+
 	CallTimeout int
 }
 

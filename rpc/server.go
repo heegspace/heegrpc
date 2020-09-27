@@ -1,6 +1,11 @@
 package rpc
 
 import (
+	"fmt"
+	"heegrpc/utils"
+	"strings"
+	"time"
+
 	"github.com/apache/thrift/lib/go/thrift"
 )
 
@@ -18,11 +23,16 @@ type HeegServer struct {
 }
 
 func NewHeegServer() *HeegServer {
+	addr, err := utils.ExternalIP()
+	if nil != err {
+		panic(err)
+	}
+
 	v := &HeegServer{
 		server: nil,
 		inited: false,
 		option: Option{
-			Addr: "0.0.0.0",
+			Addr: addr.String(),
 			Port: 8088,
 		},
 	}
@@ -38,11 +48,24 @@ func (this *HeegServer) Init() (err error) {
 	this.protocolFactory = thrift.NewTBinaryProtocolFactoryDefault()
 	this.transportFactory = thrift.NewTBufferedTransportFactory(8192)
 	this.transportFactory = thrift.NewTFramedTransportFactory(this.transportFactory)
+
+retry:
 	this.transport, err = thrift.NewTServerSocket(this.option.Bind())
 	if nil != err {
+		if strings.Contains(err.Error(), "address already in use") {
+			fmt.Println(this.option.Bind() + " already in use, 3s retry!")
+
+			time.Sleep(3 * time.Second)
+
+			this.option.Port += 1
+
+			goto retry
+		}
+
 		return
 	}
 
+	fmt.Println("Service start in " + this.option.Bind())
 	this.inited = true
 	return
 }
