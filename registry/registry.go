@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"heegrpc"
-	"heegrpc/rpc"
 	"sync"
 	"time"
 
+	"github.com/heegspace/heegrpc/rpc"
 	"github.com/heegspace/heegproto/s2sname"
 )
 

@@ -2,11 +2,11 @@ package rpc
 
 import (
 	"fmt"
-	"heegrpc/utils"
 	"strings"
 	"time"
 
 	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/heegspace/heegrpc/utils"
 )
 
 type HeegServer struct {
@@ -60,6 +60,7 @@ func (this *HeegServer) Init() (err error) {
 }
 
 func (this *HeegServer) retry() {
+	fmt.Println("Retry create  ", this.Option.Bind())
 	transport, err := thrift.NewTServerSocket(this.Option.Bind())
 	if nil != err {
 		return
