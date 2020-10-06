@@ -41,7 +41,16 @@ func (this *HeegServer) Init() (err error) {
 	this.transportFactory = thrift.NewTBufferedTransportFactory(8192)
 	this.transportFactory = thrift.NewTFramedTransportFactory(this.transportFactory)
 
-	this.transport, err = thrift.NewTServerSocket(this.Option.Bind())
+	this.transport, err = thrift.NewTServerSocketFunc(this.Option.Bind(), func(addr string, port string) {
+		if nil != this.Option.ListenFunc {
+			this.Func(addr, port)
+		}
+
+		fmt.Println(addr, "  ", port)
+
+		return
+	})
+
 	if nil != err {
 		return
 	}
@@ -51,8 +60,16 @@ func (this *HeegServer) Init() (err error) {
 }
 
 func (this *HeegServer) retry() {
-	fmt.Println("Retry create  ", this.Option.Bind())
-	transport, err := thrift.NewTServerSocket(this.Option.Bind())
+	transport, err := thrift.NewTServerSocketFunc(this.Option.Bind(), func(addr string, port string) {
+		if nil != this.Option.ListenFunc {
+			this.Func(addr, port)
+		}
+
+		fmt.Println(addr, "  ", port)
+
+		return
+	})
+
 	if nil != err {
 		return
 	}

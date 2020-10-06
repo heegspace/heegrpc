@@ -2,6 +2,8 @@ package rpc
 
 import (
 	"strconv"
+
+	"github.com/heegspace/thrift"
 )
 
 type Option struct {
@@ -13,6 +15,8 @@ type Option struct {
 	S2sKey  string
 
 	CallTimeout int
+
+	ListenFunc thrift.LISTEN_FUNC
 }
 
 func (this *Option) Bind() string {
