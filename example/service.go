@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"heegrpc/example/gen-go/example"
 
@@ -47,35 +48,37 @@ func main() {
 		panic(err)
 	}
 
+	registry := registry.NewRegistry()
 	service := heegrpc.NewHeegRpcServer(rpc.Option{
 		Addr: addr.String(),
-		Port: 9099,
+		Port: 8088,
 		ListenFunc: func(addr, port string) {
-			fmt.Println(addr, "  ", port)
+			fmt.Println("Listen: ", addr, "  ", port)
+			p, _ := strconv.Atoi(port)
+			_reg_option := rpc.Option{
+				Addr:    addr,
+				Port:    p,
+				S2sName: "example_test",
+				Url:     "http://s2s.data.com",
+			}
+
+			err = registry.Init(&_reg_option)
+			if nil != err {
+				panic(err)
+			}
+
+			err = registry.Register()
+			if nil != err {
+				panic(err)
+			}
+
+			fmt.Println("Listen: ", addr, "  ", port)
 		},
 	})
 
 	err = service.Init()
 	if nil != err {
 		panic(err.Error())
-	}
-
-	_reg_option := rpc.Option{
-		Addr:    "192.168.1.4",
-		Port:    9099,
-		S2sName: "BADC-76DA-765E-9000-BBA7",
-		Url:     "http://s2s.data.com",
-	}
-
-	registry := registry.NewRegistry()
-	err = registry.Init(&_reg_option)
-	if nil != err {
-		panic(err)
-	}
-
-	err = registry.Register()
-	if nil != err {
-		panic(err)
 	}
 
 	service.Processor(NewProcessor())

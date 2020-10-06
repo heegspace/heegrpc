@@ -22,7 +22,7 @@ func main() {
 		panic(err)
 	}
 
-	info, err := registry.Selector("BADC-76DA-765E-9000-BBA7")
+	info, err := registry.Selector("example_test")
 	if nil != err {
 		panic(err)
 	}
