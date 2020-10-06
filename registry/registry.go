@@ -380,7 +380,7 @@ func (this *Registry) heart() {
 // 维护s2s连接的心跳包
 //
 func (this *Registry) Heart() {
-	ticker := time.NewTicker(time.Duration((int(s2sname.Const_Expired/2)) * time.Second)
+	ticker := time.NewTicker(time.Duration((int(s2sname.Const_Expired / 2))) * time.Second)
 	for {
 		select {
 		case <-ticker.C:
