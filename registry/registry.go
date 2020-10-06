@@ -353,7 +353,7 @@ func (this *Registry) fetchs2s() (err error) {
 }
 
 func (this *Registry) heart() {
-	err = this.can()
+	err := this.can()
 	if nil != err {
 		return
 	}
