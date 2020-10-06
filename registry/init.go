@@ -1,5 +1,10 @@
 package registry
 
+type registry_conf struct {
+	Host string `json:"host"`
+	Port int    `json:"port"`
+}
+
 type S2sName struct {
 	Host string
 	Port int32

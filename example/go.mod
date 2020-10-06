@@ -2,9 +2,12 @@ module heegrpc/example
 
 go 1.13
 
-replace heegrpc => /home/hai/github/go/src/heegrpc
+// replace github.com/heegspace/heegrpc => /home/hai/github/go/src/heegrpc
 
-require (
-	github.com/apache/thrift v0.13.0
-	heegrpc v0.0.0-00010101000000-000000000000
-)
+// replace github.com/heegspace/heegrpc/rpc => /home/hai/github/go/src/heegrpc/rpc
+
+// replace github.com/heegspace/heegrpc/utils => /home/hai/github/go/src/heegrpc/utils
+
+// replace github.com/heegspace/heegproto/s2sname => /home/hai/github/go/src/heegproto/s2sname
+
+// replace github.com/heegspace/heegrpc/registry => /home/hai/github/go/src/heegrpc/registry

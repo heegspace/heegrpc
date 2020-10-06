@@ -1,14 +1,18 @@
 package registry
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"heegrpc"
+	"io/ioutil"
+	"net/http"
 	"sync"
 	"time"
 
-	"github.com/heegspace/heegrpc/rpc"
 	"github.com/heegspace/heegproto/s2sname"
+	"github.com/heegspace/heegrpc"
+	"github.com/heegspace/heegrpc/rpc"
 )
 
 type Registry struct {
@@ -17,11 +21,13 @@ type Registry struct {
 	mutex sync.Mutex
 	watch bool
 
-	client *s2sname.S2snameServiceClient
-
 	S2sname string
 	S2shost string // s2s服务的地址信息"主机:端口"
 	S2spost int    //
+
+	regConf *registry_conf
+
+	client *s2sname.S2snameServiceClient
 }
 
 var _registry *Registry
@@ -41,18 +47,60 @@ func NewRegistry() *Registry {
 	return _registry
 }
 
+// 通过发起http请求，从http服务器中获取s2s信息
+// 主要用于连接s2s服务器，用于注册和发现服务
+//
+func (this *Registry) s2sInfo(url string) {
+	resp, err := http.Get(url)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if nil != err {
+		panic(err)
+	}
+
+	if 200 != resp.StatusCode {
+		panic("Request fail")
+	}
+
+	var register registry_conf
+	err = json.Unmarshal(body, &register)
+	if nil != err {
+		panic("s2sInfo err " + err.Error())
+	}
+
+	this.regConf = &register
+	return
+}
+
 // 初始化s2sname请求客户端
 // 主要用于和s2sname服务进行通信
-// 
-func Init(option *rpc.Option) (err error) {
+//
+// @param option
+//
+func (this *Registry) Init(option *rpc.Option) (err error) {
+	this.s2sInfo(option.Url)
+
 	this.S2sname = option.S2sName
 	this.S2shost = option.Addr
 	this.S2spost = option.Port
 
-	client := heegrpc.NewHeegRpcClient()
+	var _optn rpc.Option
+	_optn.Addr = this.regConf.Host
+	_optn.Port = this.regConf.Port
+
+	client := heegrpc.NewHeegRpcClient(_optn)
 	thclient := s2sname.NewS2snameServiceClientFactory(client.Client())
 
 	this.client = thclient
+
+	this.fetchs2s()
+
+	// 启动后台任务
+	go this.Watch()
 
 	return
 }
@@ -75,24 +123,25 @@ func (this *Registry) can() (err error) {
 func (this *Registry) Register() (err error) {
 	err = this.can()
 	if nil != err {
-		return 
+		return
 	}
 
-	req := &s2sname.RegisterReq {
+	req := &s2sname.RegisterReq{
 		Name: this.S2sname,
-		S2s: &&s2sname.S2sname {
-			Host: this.S2shost,
-			Port: this.S2spost,
-			Prority: this.Prority,
-			Name: this.S2sname,
+		S2s: &s2sname.S2sname{
+			Host:    this.S2shost,
+			Port:    int32(this.S2spost),
+			Prority: 0,
+			Name:    this.S2sname,
 		},
 	}
 
-	res,err := this.client.RegisterS2sname(req)
+	res, err := this.client.RegisterS2sname(context.TODO(), req)
 	if nil != err {
-		return 
+		return
 	}
 
+	fmt.Println("RegisterS2sname: ", res)
 	return
 }
 
@@ -115,21 +164,22 @@ func (this *Registry) IncPrority(s2s *s2sname.S2sname) {
 		},
 	}
 
-	s2sres, err := this.client.UpdateS2sname(req)
+	s2sres, err := this.client.UpdateS2sname(context.TODO(), req)
 	if nil != err {
 		return
 	}
+	fmt.Println("UpdateS2sname: ", s2sres)
 
 	return
 }
 
 // 选择可以用的服务,选择负载最小的服务器
 //
-// @param s2sname
+// @param name
 // @return r 	s2s节点信息
-func (this *Registry) Selector(s2sname string) (r *S2sName, err error) {
-	if 0 == len(s2sname) {
-		err = errors.New("s2sname is empty.")
+func (this *Registry) Selector(name string) (r *S2sName, err error) {
+	if 0 == len(name) {
+		err = errors.New("Selector name is empty.")
 
 		return
 	}
@@ -137,15 +187,15 @@ func (this *Registry) Selector(s2sname string) (r *S2sName, err error) {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 
-	if _, ok := this.s2sName[s2sname]; !ok {
-		err = errors.New("Didn't s2sname's service!")
+	if _, ok := this.s2sName[name]; !ok {
+		err = errors.New("Didn't name's service!")
 
 		return
 	}
 
 	index := 0
-	prority := int32(999)
-	for k, v := range this.s2sName[s2sname] {
+	prority := int32(999999999)
+	for k, v := range this.s2sName[name] {
 		if prority > v.Prority {
 			index = k
 			prority = v.Prority
@@ -154,10 +204,17 @@ func (this *Registry) Selector(s2sname string) (r *S2sName, err error) {
 		}
 	}
 
-	r = this.s2sName[s2sname][index]
+	r = this.s2sName[name][index]
+
+	value := &s2sname.S2sname{
+		Host:    r.Host,
+		Port:    r.Port,
+		Name:    name,
+		Prority: prority + 1,
+	}
 
 	// 更新s2s prority 到服务器
-	this.IncPrority(r)
+	this.IncPrority(value)
 
 	return
 }
@@ -172,7 +229,7 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 		return
 	}
 
-	s2sres, err := this.client.FetchS2sname(name)
+	s2sres, err := this.client.FetchS2sname(context.TODO(), name)
 	if nil != err || nil == s2sres {
 		return
 	}
@@ -205,7 +262,7 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 
 			if vitem == v1item {
 				exists = true
-				this.s2sName[v.Name][k1] = v
+				this.s2sName[v.Name][k1] = v1
 
 				break
 			}
@@ -213,7 +270,13 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 
 		// 不存在则将节点追加到管理器中
 		if !exists {
-			this.s2sName[v.Name] = append(this.s2sName[v.Name], v)
+			value := &S2sName{
+				Host:    v.Host,
+				Port:    v.Port,
+				Prority: v.Prority,
+			}
+
+			this.s2sName[v.Name] = append(this.s2sName[v.Name], value)
 		}
 	}
 
@@ -224,7 +287,7 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 // 并更新到s2sname数组中
 //
 func (this *Registry) fetchs2s() (err error) {
-	s2sres, err := this.client.FetchS2snames(name)
+	s2sres, err := this.client.FetchS2snames(context.TODO())
 	if nil != err || nil == s2sres {
 		return
 	}
@@ -257,7 +320,14 @@ func (this *Registry) fetchs2s() (err error) {
 
 			if vitem == v1item {
 				exists = true
-				this.s2sName[v.Name][k1] = v
+
+				value := &S2sName{
+					Host:    v.Host,
+					Port:    v.Port,
+					Prority: v.Prority,
+				}
+
+				this.s2sName[v.Name][k1] = value
 
 				break
 			}
@@ -265,10 +335,18 @@ func (this *Registry) fetchs2s() (err error) {
 
 		// 不存在则将节点追加到管理器中
 		if !exists {
-			this.s2sName[v.Name] = append(this.s2sName[v.Name], v)
+			value := &S2sName{
+				Host:    v.Host,
+				Port:    v.Port,
+				Prority: v.Prority,
+			}
+
+			this.s2sName[v.Name] = append(this.s2sName[v.Name], value)
 		}
 	}
 
+	data, _ := json.Marshal(this.s2sName)
+	fmt.Println("fetchs2s: ", string(data))
 	return
 }
 
@@ -278,13 +356,17 @@ func (this *Registry) Watch() {
 	if this.watch {
 		return
 	}
-
 	this.watch = true
+
 	ticker := time.NewTicker(20 * 60 * time.Second)
+	// ticker := time.NewTicker(10 * time.Second)
 	for {
 		select {
 		case <-ticker.C:
-			this.fetchs2s()
+			err := this.fetchs2s()
+			if nil != err {
+				fmt.Println("Watch fetchs2s err ", err)
+			}
 		}
 	}
 }

@@ -9,19 +9,16 @@ type HeegClient struct {
 	protocolFactory  thrift.TProtocolFactory
 	transportFactory thrift.TTransportFactory
 
-	option Option
-
 	//
 	inited bool
+
+	option Option
 }
 
-func NewHeegClient() *HeegClient {
+func NewHeegClient(option Option) *HeegClient {
 	v := &HeegClient{
 		inited: false,
-		option: Option{
-			Addr: "0.0.0.0",
-			Port: 8089,
-		},
+		option: option,
 	}
 
 	return v
@@ -46,16 +43,14 @@ func (this *HeegClient) Close() {
 	return
 }
 
-// 通过s2sname获取client对象
+// 获取client对象
 //
-// @param s2sname 	s2sname名字
 // @return 返回用于创建thrift client的信息
 func (this *HeegClient) Client() (thrift.TTransport, thrift.TProtocolFactory) {
 	if !this.inited {
 		this.Init()
 	}
 
-	// get server addr by s2sname
 	// 主要是获取thrift服务的地址信息
 	tt, err := thrift.NewTSocket(this.option.Bind())
 	if nil != err {

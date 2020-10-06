@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/apache/thrift/lib/go/thrift"
-	"github.com/heegspace/heegrpc/utils"
 )
 
 type HeegServer struct {
@@ -23,19 +22,11 @@ type HeegServer struct {
 	processor thrift.TProcessor
 }
 
-func NewHeegServer() *HeegServer {
-	addr, err := utils.ExternalIP()
-	if nil != err {
-		panic(err)
-	}
-
+func NewHeegServer(option Option) *HeegServer {
 	v := &HeegServer{
 		server: nil,
 		inited: false,
-		Option: Option{
-			Addr: addr.String(),
-			Port: 8088,
-		},
+		Option: option,
 	}
 
 	return v
