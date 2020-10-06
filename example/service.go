@@ -50,6 +50,9 @@ func main() {
 	service := heegrpc.NewHeegRpcServer(rpc.Option{
 		Addr: addr.String(),
 		Port: 9099,
+		ListenFunc: func(addr, port string) {
+			fmt.Println(addr, "  ", port)
+		},
 	})
 
 	err = service.Init()

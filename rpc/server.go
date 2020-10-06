@@ -43,7 +43,7 @@ func (this *HeegServer) Init() (err error) {
 
 	this.transport, err = thrift.NewTServerSocketFunc(this.Option.Bind(), func(addr string, port string) {
 		if nil != this.Option.ListenFunc {
-			this.Func(addr, port)
+			this.Option.Func(addr, port)
 		}
 
 		fmt.Println(addr, "  ", port)
@@ -62,7 +62,7 @@ func (this *HeegServer) Init() (err error) {
 func (this *HeegServer) retry() {
 	transport, err := thrift.NewTServerSocketFunc(this.Option.Bind(), func(addr string, port string) {
 		if nil != this.Option.ListenFunc {
-			this.Func(addr, port)
+			this.Option.Func(addr, port)
 		}
 
 		fmt.Println(addr, "  ", port)
