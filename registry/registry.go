@@ -141,6 +141,8 @@ func (this *Registry) Register() (err error) {
 		return
 	}
 
+	go this.Heart()
+
 	fmt.Println("RegisterS2sname: ", res)
 	return
 }
@@ -348,6 +350,43 @@ func (this *Registry) fetchs2s() (err error) {
 	data, _ := json.Marshal(this.s2sName)
 	fmt.Println("fetchs2s: ", string(data))
 	return
+}
+
+func (this *Registry) heart() {
+	err = this.can()
+	if nil != err {
+		return
+	}
+
+	req := &s2sname.HeartReq{
+		Name: this.S2sname,
+		S2s: &s2sname.S2sname{
+			Host:    this.S2shost,
+			Port:    int32(this.S2spost),
+			Prority: 0,
+			Name:    this.S2sname,
+		},
+	}
+
+	res, err := this.client.Heart(context.TODO(), req)
+	if nil != err {
+		return
+	}
+
+	fmt.Println("Heart --------- : ", res)
+	return
+}
+
+// 维护s2s连接的心跳包
+//
+func (this *Registry) Heart() {
+	ticker := time.NewTicker(time.Duration((int(s2sname.Const_Expired/2)) * time.Second)
+	for {
+		select {
+		case <-ticker.C:
+			this.heart()
+		}
+	}
 }
 
 // 20分钟获取一次s2sname信息
