@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/heegspace/thrift"
 )
 
 type HeegServer struct {

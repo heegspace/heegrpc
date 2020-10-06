@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/heegspace/thrift"
 )
 
 type HeegClient struct {

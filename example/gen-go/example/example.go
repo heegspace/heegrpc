@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/heegspace/thrift"
 )
 
 // (needed to ensure safety because of naive import list construction.)

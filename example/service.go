@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"heegrpc/example/gen-go/example"
 
@@ -11,8 +10,8 @@ import (
 	"github.com/heegspace/heegrpc/rpc"
 	"github.com/heegspace/heegrpc/utils"
 
-	"github.com/apache/thrift/lib/go/thrift"
 	"github.com/heegspace/heegrpc/registry"
+	"github.com/heegspace/thrift"
 )
 
 type ExampleServiceHandle struct{}
@@ -26,7 +25,6 @@ func (p *ExampleServiceHandle) GetResponse(ctx context.Context, req *example.Exa
 	v.Map1["key1"] = "value1"
 	v.Map1["key2"] = "value2"
 
-	time.Sleep(5 * time.Second)
 	return v, nil
 }
 

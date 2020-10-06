@@ -3,12 +3,13 @@
 
 package example
 
-import(
+import (
 	"bytes"
 	"context"
-	"reflect"
 	"fmt"
-	"github.com/apache/thrift/lib/go/thrift"
+	"reflect"
+
+	"github.com/heegspace/thrift"
 )
 
 // (needed to ensure safety because of naive import list construction.)
@@ -18,7 +19,5 @@ var _ = context.Background
 var _ = reflect.DeepEqual
 var _ = bytes.Equal
 
-
 func init() {
 }
-
