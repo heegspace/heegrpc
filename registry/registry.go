@@ -355,6 +355,8 @@ func (this *Registry) fetchs2s() (err error) {
 func (this *Registry) heart() {
 	err := this.can()
 	if nil != err {
+		fmt.Println("heart can error ", err)
+
 		return
 	}
 
@@ -370,18 +372,18 @@ func (this *Registry) heart() {
 
 	res, err := this.client.Heart(context.TODO(), req)
 	if nil != err {
-		fmt.Println("client.Heart   =====  ", err)
+		fmt.Println("Send Heart error ", err)
 		return
 	}
 
-	fmt.Println("Heart --------- : ", res)
+	fmt.Println("Heart response", res)
 	return
 }
 
 // 维护s2s连接的心跳包
 //
 func (this *Registry) Heart() {
-	ticker := time.NewTicker(time.Duration((int(s2sname.Const_Expired / 2))) * time.Second)
+	ticker := time.NewTicker(time.Duration(10) * time.Second)
 	for {
 		select {
 		case <-ticker.C:
@@ -398,8 +400,7 @@ func (this *Registry) Watch() {
 	}
 	this.watch = true
 
-	ticker := time.NewTicker(1 * 60 * time.Second)
-	// ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(2 * 60 * time.Second)
 	for {
 		select {
 		case <-ticker.C:
