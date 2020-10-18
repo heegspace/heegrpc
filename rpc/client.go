@@ -30,7 +30,7 @@ func (this *HeegClient) Init() (err error) {
 	}
 
 	this.protocolFactory = thrift.NewTBinaryProtocolFactoryDefault()
-	this.transportFactory = thrift.NewTBufferedTransportFactory(8192)
+	this.transportFactory = thrift.NewTBufferedTransportFactory(4 * 1024 * 1024)
 	this.transportFactory = thrift.NewTFramedTransportFactory(this.transportFactory)
 
 	this.inited = true
