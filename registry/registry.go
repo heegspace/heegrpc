@@ -370,6 +370,7 @@ func (this *Registry) heart() {
 
 	res, err := this.client.Heart(context.TODO(), req)
 	if nil != err {
+		fmt.Println("client.Heart   =====  ", err)
 		return
 	}
 
@@ -397,7 +398,7 @@ func (this *Registry) Watch() {
 	}
 	this.watch = true
 
-	ticker := time.NewTicker(20 * 60 * time.Second)
+	ticker := time.NewTicker(1 * 60 * time.Second)
 	// ticker := time.NewTicker(10 * time.Second)
 	for {
 		select {
