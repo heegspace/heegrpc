@@ -370,8 +370,7 @@ func (this *Registry) heart() {
 		},
 	}
 
-	client := heegrpc.NewHeegRpcClient(this.s2sopt)
-	thclient := s2sname.NewS2snameServiceClientFactory(client.Client())
+	thclient := s2sname.NewS2snameServiceClientFactory(this.client.Client())
 	res, err := thclient.Heart(context.TODO(), req)
 	if nil != err {
 		fmt.Println("Send Heart error ", err)
