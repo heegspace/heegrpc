@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"heegrpc"
 	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/heegspace/heegproto/s2sname"
+	"github.com/heegspace/heegrpc"
 	"github.com/heegspace/heegrpc/rpc"
 )
 
