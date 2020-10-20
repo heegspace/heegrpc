@@ -385,10 +385,10 @@ func (this *Registry) heart() {
 func (this *Registry) Heart() {
 	defer func() {
 		if err := recover(); nil != err {
-			fmt.Println("Watch  ",err)
+			fmt.Println("Watch  ", err)
 		}
-	}
-	
+	}()
+
 	ticker := time.NewTicker(time.Duration(10) * time.Second)
 	for {
 		select {
@@ -409,9 +409,9 @@ func (this *Registry) Watch() {
 
 	defer func() {
 		if err := recover(); nil != err {
-			fmt.Println("Watch  ",err)
+			fmt.Println("Watch  ", err)
 		}
-	}
+	}()
 
 	this.watch = true
 
