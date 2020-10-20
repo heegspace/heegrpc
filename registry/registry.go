@@ -383,6 +383,12 @@ func (this *Registry) heart() {
 // 维护s2s连接的心跳包
 //
 func (this *Registry) Heart() {
+	defer func() {
+		if err := recover(); nil != err {
+			fmt.Println("Watch  ",err)
+		}
+	}
+	
 	ticker := time.NewTicker(time.Duration(10) * time.Second)
 	for {
 		select {
@@ -390,6 +396,8 @@ func (this *Registry) Heart() {
 			this.heart()
 		}
 	}
+
+	fmt.Println("Heart except over.")
 }
 
 // 20分钟获取一次s2sname信息
@@ -398,6 +406,13 @@ func (this *Registry) Watch() {
 	if this.watch {
 		return
 	}
+
+	defer func() {
+		if err := recover(); nil != err {
+			fmt.Println("Watch  ",err)
+		}
+	}
+
 	this.watch = true
 
 	ticker := time.NewTicker(2 * 60 * time.Second)
@@ -410,4 +425,6 @@ func (this *Registry) Watch() {
 			}
 		}
 	}
+
+	fmt.Println("Watch except over.")
 }
