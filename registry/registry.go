@@ -26,7 +26,7 @@ type Registry struct {
 	S2spost int    //
 
 	regConf *registry_conf
-	s2sopt  rpc.Option
+	client  *rpc.HeegClient
 }
 
 var _registry *Registry
@@ -90,7 +90,8 @@ func (this *Registry) Init(option *rpc.Option) (err error) {
 	var _optn rpc.Option
 	_optn.Addr = this.regConf.Host
 	_optn.Port = this.regConf.Port
-	this.s2sopt = _optn
+
+	this.client = heegrpc.NewHeegRpcClient(_optn)
 
 	this.fetchs2s()
 
@@ -121,9 +122,6 @@ func (this *Registry) Register() (err error) {
 		return
 	}
 
-	client := heegrpc.NewHeegRpcClient(this.s2sopt)
-	thclient := s2sname.NewS2snameServiceClientFactory(client.Client())
-
 	req := &s2sname.RegisterReq{
 		Name: this.S2sname,
 		S2s: &s2sname.S2sname{
@@ -134,6 +132,7 @@ func (this *Registry) Register() (err error) {
 		},
 	}
 
+	thclient := s2sname.NewS2snameServiceClientFactory(this.client.Client())
 	res, err := thclient.RegisterS2sname(context.TODO(), req)
 	if nil != err {
 		return
@@ -164,9 +163,7 @@ func (this *Registry) IncPrority(s2s *s2sname.S2sname) {
 		},
 	}
 
-	client := heegrpc.NewHeegRpcClient(this.s2sopt)
-	thclient := s2sname.NewS2snameServiceClientFactory(client.Client())
-
+	thclient := s2sname.NewS2snameServiceClientFactory(this.client.Client())
 	s2sres, err := thclient.UpdateS2sname(context.TODO(), req)
 	if nil != err {
 		return
@@ -232,8 +229,7 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 		return
 	}
 
-	client := heegrpc.NewHeegRpcClient(this.s2sopt)
-	thclient := s2sname.NewS2snameServiceClientFactory(client.Client())
+	thclient := s2sname.NewS2snameServiceClientFactory(this.client.Client())
 	s2sres, err := thclient.FetchS2sname(context.TODO(), name)
 	if nil != err || nil == s2sres {
 		return
@@ -292,8 +288,7 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 // 并更新到s2sname数组中
 //
 func (this *Registry) fetchs2s() (err error) {
-	client := heegrpc.NewHeegRpcClient(this.s2sopt)
-	thclient := s2sname.NewS2snameServiceClientFactory(client.Client())
+	thclient := s2sname.NewS2snameServiceClientFactory(this.client.Client())
 	s2sres, err := thclient.FetchS2snames(context.TODO())
 	if nil != err || nil == s2sres {
 		return
@@ -390,12 +385,6 @@ func (this *Registry) heart() {
 // 维护s2s连接的心跳包
 //
 func (this *Registry) Heart() {
-	defer func() {
-		if err := recover(); nil != err {
-			fmt.Println("Watch  ", err)
-		}
-	}()
-
 	ticker := time.NewTicker(time.Duration(10) * time.Second)
 	for {
 		select {
@@ -403,8 +392,6 @@ func (this *Registry) Heart() {
 			this.heart()
 		}
 	}
-
-	fmt.Println("Heart except over.")
 }
 
 // 20分钟获取一次s2sname信息
@@ -413,13 +400,6 @@ func (this *Registry) Watch() {
 	if this.watch {
 		return
 	}
-
-	defer func() {
-		if err := recover(); nil != err {
-			fmt.Println("Watch  ", err)
-		}
-	}()
-
 	this.watch = true
 
 	ticker := time.NewTicker(2 * 60 * time.Second)
@@ -432,6 +412,4 @@ func (this *Registry) Watch() {
 			}
 		}
 	}
-
-	fmt.Println("Watch except over.")
 }
