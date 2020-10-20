@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"heegrpc"
 	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/heegspace/heegproto/s2sname"
-	"github.com/heegspace/heegrpc"
 	"github.com/heegspace/heegrpc/rpc"
 )
 
@@ -26,8 +26,7 @@ type Registry struct {
 	S2spost int    //
 
 	regConf *registry_conf
-
-	client *s2sname.S2snameServiceClient
+	s2sopt  rpc.Option
 }
 
 var _registry *Registry
@@ -91,11 +90,7 @@ func (this *Registry) Init(option *rpc.Option) (err error) {
 	var _optn rpc.Option
 	_optn.Addr = this.regConf.Host
 	_optn.Port = this.regConf.Port
-
-	client := heegrpc.NewHeegRpcClient(_optn)
-	thclient := s2sname.NewS2snameServiceClientFactory(client.Client())
-
-	this.client = thclient
+	this.s2sopt = _optn
 
 	this.fetchs2s()
 
@@ -126,6 +121,9 @@ func (this *Registry) Register() (err error) {
 		return
 	}
 
+	client := heegrpc.NewHeegRpcClient(this.s2sopt)
+	thclient := s2sname.NewS2snameServiceClientFactory(client.Client())
+
 	req := &s2sname.RegisterReq{
 		Name: this.S2sname,
 		S2s: &s2sname.S2sname{
@@ -136,7 +134,7 @@ func (this *Registry) Register() (err error) {
 		},
 	}
 
-	res, err := this.client.RegisterS2sname(context.TODO(), req)
+	res, err := thclient.RegisterS2sname(context.TODO(), req)
 	if nil != err {
 		return
 	}
@@ -166,7 +164,10 @@ func (this *Registry) IncPrority(s2s *s2sname.S2sname) {
 		},
 	}
 
-	s2sres, err := this.client.UpdateS2sname(context.TODO(), req)
+	client := heegrpc.NewHeegRpcClient(this.s2sopt)
+	thclient := s2sname.NewS2snameServiceClientFactory(client.Client())
+
+	s2sres, err := thclient.UpdateS2sname(context.TODO(), req)
 	if nil != err {
 		return
 	}
@@ -231,7 +232,9 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 		return
 	}
 
-	s2sres, err := this.client.FetchS2sname(context.TODO(), name)
+	client := heegrpc.NewHeegRpcClient(this.s2sopt)
+	thclient := s2sname.NewS2snameServiceClientFactory(client.Client())
+	s2sres, err := thclient.FetchS2sname(context.TODO(), name)
 	if nil != err || nil == s2sres {
 		return
 	}
@@ -289,7 +292,9 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 // 并更新到s2sname数组中
 //
 func (this *Registry) fetchs2s() (err error) {
-	s2sres, err := this.client.FetchS2snames(context.TODO())
+	client := heegrpc.NewHeegRpcClient(this.s2sopt)
+	thclient := s2sname.NewS2snameServiceClientFactory(client.Client())
+	s2sres, err := thclient.FetchS2snames(context.TODO())
 	if nil != err || nil == s2sres {
 		return
 	}
@@ -370,7 +375,9 @@ func (this *Registry) heart() {
 		},
 	}
 
-	res, err := this.client.Heart(context.TODO(), req)
+	client := heegrpc.NewHeegRpcClient(this.s2sopt)
+	thclient := s2sname.NewS2snameServiceClientFactory(client.Client())
+	res, err := thclient.Heart(context.TODO(), req)
 	if nil != err {
 		fmt.Println("Send Heart error ", err)
 		return
