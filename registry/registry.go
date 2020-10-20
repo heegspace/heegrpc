@@ -94,7 +94,7 @@ func (this *Registry) Init(option *rpc.Option) (err error) {
 	_optn.Addr = this.regConf.Host
 	_optn.Port = this.regConf.Port
 
-	client = heegrpc.NewHeegRpcClient(_optn)
+	client := heegrpc.NewHeegRpcClient(_optn)
 	this.transport,this.protocol = client.Client()
 
 	this.fetchs2s()
