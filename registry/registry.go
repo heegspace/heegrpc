@@ -13,6 +13,7 @@ import (
 	"github.com/heegspace/heegproto/s2sname"
 	"github.com/heegspace/heegrpc"
 	"github.com/heegspace/heegrpc/rpc"
+	"github.com/heegspace/thrift"
 )
 
 type Registry struct {
@@ -27,7 +28,7 @@ type Registry struct {
 
 	regConf *registry_conf
 
-	client *TStandardClient
+	client *thrift.TStandardClient
 }
 
 var _registry *Registry
