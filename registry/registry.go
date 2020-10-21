@@ -16,6 +16,8 @@ import (
 	"github.com/heegspace/thrift"
 )
 
+var defaultCtx = context.Background()
+
 type Registry struct {
 	s2sName map[string][]*S2sName
 
@@ -136,7 +138,7 @@ func (this *Registry) Register() (err error) {
 	}
 
 	thclient := s2sname.NewS2snameServiceClient(this.client)
-	res, err := thclient.RegisterS2sname(context.TODO(), req)
+	res, err := thclient.RegisterS2sname(defaultCtx, req)
 	if nil != err {
 		return
 	}
@@ -167,7 +169,7 @@ func (this *Registry) IncPrority(s2s *s2sname.S2sname) {
 	}
 
 	thclient := s2sname.NewS2snameServiceClient(this.client)
-	s2sres, err := thclient.UpdateS2sname(context.TODO(), req)
+	s2sres, err := thclient.UpdateS2sname(defaultCtx, req)
 	if nil != err {
 		return
 	}
@@ -233,7 +235,7 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 	}
 
 	thclient := s2sname.NewS2snameServiceClient(this.client)
-	s2sres, err := thclient.FetchS2sname(context.TODO(), name)
+	s2sres, err := thclient.FetchS2sname(defaultCtx, name)
 	if nil != err || nil == s2sres {
 		return
 	}
@@ -292,7 +294,7 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 //
 func (this *Registry) fetchs2s() (err error) {
 	thclient := s2sname.NewS2snameServiceClient(this.client)
-	s2sres, err := thclient.FetchS2snames(context.TODO())
+	s2sres, err := thclient.FetchS2snames(defaultCtx)
 	if nil != err || nil == s2sres {
 		return
 	}
@@ -374,7 +376,7 @@ func (this *Registry) heart() {
 	}
 
 	thclient := s2sname.NewS2snameServiceClient(this.client)
-	res, err := thclient.Heart(context.TODO(), req)
+	res, err := thclient.Heart(defaultCtx, req)
 	if nil != err {
 		fmt.Println("Send Heart error ", err)
 		return
