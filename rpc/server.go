@@ -38,8 +38,7 @@ func (this *HeegServer) Init() (err error) {
 	}
 
 	this.protocolFactory = thrift.NewTBinaryProtocolFactoryDefault()
-	this.transportFactory = thrift.NewTBufferedTransportFactory(4 * 1024 * 1024) // 4M
-	this.transportFactory = thrift.NewTFramedTransportFactory(this.transportFactory)
+	this.transportFactory = thrift.NewTBufferedTransportFactory(1 * 1024 * 1024) // 4M
 
 	this.transport, err = thrift.NewTServerSocketFunc(this.Option.Bind(), func(protocol, addr string) {
 		if nil != this.Option.ListenFunc {

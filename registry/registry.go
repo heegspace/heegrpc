@@ -13,7 +13,6 @@ import (
 	"github.com/heegspace/heegproto/s2sname"
 	"github.com/heegspace/heegrpc"
 	"github.com/heegspace/heegrpc/rpc"
-	"github.com/heegspace/thrift"
 )
 
 type Registry struct {
@@ -28,8 +27,7 @@ type Registry struct {
 
 	regConf *registry_conf
 
-	transport thrift.TTransport
-	protocol  thrift.TProtocolFactory
+	client *TStandardClient
 }
 
 var _registry *Registry
@@ -94,8 +92,8 @@ func (this *Registry) Init(option *rpc.Option) (err error) {
 	_optn.Addr = this.regConf.Host
 	_optn.Port = this.regConf.Port
 
-	client := heegrpc.NewHeegRpcClient(_optn)
-	this.transport, this.protocol = client.Client()
+	rpc := heegrpc.NewHeegRpcClient(_optn)
+	this.client = rpc.Client()
 
 	this.fetchs2s()
 
@@ -136,7 +134,7 @@ func (this *Registry) Register() (err error) {
 		},
 	}
 
-	thclient := s2sname.NewS2snameServiceClientFactory(this.transport, this.protocol)
+	thclient := s2sname.NewS2snameServiceClient(this.client)
 	res, err := thclient.RegisterS2sname(context.TODO(), req)
 	if nil != err {
 		return
@@ -167,7 +165,7 @@ func (this *Registry) IncPrority(s2s *s2sname.S2sname) {
 		},
 	}
 
-	thclient := s2sname.NewS2snameServiceClientFactory(this.transport, this.protocol)
+	thclient := s2sname.NewS2snameServiceClient(this.client)
 	s2sres, err := thclient.UpdateS2sname(context.TODO(), req)
 	if nil != err {
 		return
@@ -233,7 +231,7 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 		return
 	}
 
-	thclient := s2sname.NewS2snameServiceClientFactory(this.transport, this.protocol)
+	thclient := s2sname.NewS2snameServiceClient(this.client)
 	s2sres, err := thclient.FetchS2sname(context.TODO(), name)
 	if nil != err || nil == s2sres {
 		return
@@ -292,7 +290,7 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 // 并更新到s2sname数组中
 //
 func (this *Registry) fetchs2s() (err error) {
-	thclient := s2sname.NewS2snameServiceClientFactory(this.transport, this.protocol)
+	thclient := s2sname.NewS2snameServiceClient(this.client)
 	s2sres, err := thclient.FetchS2snames(context.TODO())
 	if nil != err || nil == s2sres {
 		return
@@ -374,7 +372,7 @@ func (this *Registry) heart() {
 		},
 	}
 
-	thclient := s2sname.NewS2snameServiceClientFactory(this.transport, this.protocol)
+	thclient := s2sname.NewS2snameServiceClient(this.client)
 	res, err := thclient.Heart(context.TODO(), req)
 	if nil != err {
 		fmt.Println("Send Heart error ", err)

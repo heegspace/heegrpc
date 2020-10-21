@@ -30,8 +30,6 @@ func (this *HeegClient) Init() (err error) {
 	}
 
 	this.protocolFactory = thrift.NewTBinaryProtocolFactoryDefault()
-	this.transportFactory = thrift.NewTBufferedTransportFactory(4 * 1024 * 1024)
-	this.transportFactory = thrift.NewTFramedTransportFactory(this.transportFactory)
 
 	this.inited = true
 	return
@@ -46,7 +44,7 @@ func (this *HeegClient) Close() {
 // 获取client对象
 //
 // @return 返回用于创建thrift client的信息
-func (this *HeegClient) Client() (thrift.TTransport, thrift.TProtocolFactory) {
+func (this *HeegClient) Client() *TStandardClient {
 	if !this.inited {
 		this.Init()
 	}
@@ -57,15 +55,9 @@ func (this *HeegClient) Client() (thrift.TTransport, thrift.TProtocolFactory) {
 		panic(err.Error())
 	}
 
-	this.transport, err = this.transportFactory.GetTransport(tt)
-	if err != nil {
-		panic(err.Error())
-	}
-	if err := this.transport.Open(); err != nil {
-		panic(err.Error())
-	}
+	trans := thrift.NewTBufferedTransport(tt, 1*1024*1024)
+	iprot := this.protocolFactory.GetProtocol(trans)
+	oprot := this.protocolFactory.GetProtocol(trans)
 
-	// Debug
-	// return this.transport, thrift.NewTDebugProtocolFactory(this.protocolFactory, "Client")
-	return this.transport, this.protocolFactory
+	return thrift.NewTStandardClient(iprot, oprot)
 }
