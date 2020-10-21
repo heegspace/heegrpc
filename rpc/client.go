@@ -54,8 +54,12 @@ func (this *HeegClient) Client() *thrift.TStandardClient {
 	if nil != err {
 		panic(err.Error())
 	}
-
 	trans := thrift.NewTBufferedTransport(tt, 1*1024*1024)
+
+	if err = tt.Open(); err != nil {
+		panic(err.Error())
+	}
+
 	iprot := this.protocolFactory.GetProtocol(trans)
 	oprot := this.protocolFactory.GetProtocol(trans)
 
