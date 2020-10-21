@@ -44,7 +44,7 @@ func (this *HeegClient) Close() {
 // 获取client对象
 //
 // @return 返回用于创建thrift client的信息
-func (this *HeegClient) Client() *TStandardClient {
+func (this *HeegClient) Client() *thrift.TStandardClient {
 	if !this.inited {
 		this.Init()
 	}
