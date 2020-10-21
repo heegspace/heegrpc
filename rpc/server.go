@@ -101,6 +101,10 @@ func (this *HeegServer) Processor(processor thrift.TProcessor) {
 
 func (this *HeegServer) Run() (err error) {
 retry:
+	if err = this.server.Listen(); err != nil {
+		return
+	}
+	go this.server.AcceptLoop()
 	err = this.server.Serve()
 	if nil != err {
 		if strings.Contains(err.Error(), "address already in use") {
