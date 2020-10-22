@@ -374,7 +374,7 @@ func (this *Registry) heart() {
 	}
 
 	thclient := s2sname.NewS2snameServiceClient(this.client.Client())
-	res, err := thclient.Heart(defaultCtx, req)
+	_, err = thclient.Heart(defaultCtx, req)
 	if nil != err {
 		fmt.Println("Send Heart error ", err)
 		return
