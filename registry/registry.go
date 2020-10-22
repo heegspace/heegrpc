@@ -350,8 +350,8 @@ func (this *Registry) fetchs2s() (err error) {
 		}
 	}
 
-	data, _ := json.Marshal(this.s2sName)
-	fmt.Println("fetchs2s: ", string(data))
+	// data, _ := json.Marshal(this.s2sName)
+	// fmt.Println("fetchs2s: ", string(data))
 	return
 }
 
@@ -380,14 +380,13 @@ func (this *Registry) heart() {
 		return
 	}
 
-	fmt.Println("Heart response", res)
 	return
 }
 
 // 维护s2s连接的心跳包
 //
 func (this *Registry) Heart() {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(3 * time.Second)
 	for {
 		select {
 		case <-ticker.C:
@@ -404,7 +403,7 @@ func (this *Registry) Watch() {
 	}
 	this.watch = true
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(3 * time.Second)
 	for {
 		select {
 		case <-ticker.C:
