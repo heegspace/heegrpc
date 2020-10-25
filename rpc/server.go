@@ -3,7 +3,6 @@ package rpc
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/heegspace/thrift"
 )
@@ -105,8 +104,6 @@ retry:
 	if nil != err {
 		if strings.Contains(err.Error(), "address already in use") {
 			fmt.Println(this.Option.Bind() + " already in use, 3s retry!")
-
-			time.Sleep(3 * time.Second)
 
 			this.Option.Port += 1
 			this.retry()
