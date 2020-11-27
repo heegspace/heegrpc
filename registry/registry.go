@@ -27,7 +27,7 @@ type Registry struct {
 	S2shost string // s2s服务的地址信息"主机:端口"
 	S2spost int    //
 
-	regConf *registry_conf
+	RegConf *registry_conf
 
 	client *rpc.HeegClient
 }
@@ -74,7 +74,7 @@ func (this *Registry) s2sInfo(url string) {
 		panic("s2sInfo err " + err.Error())
 	}
 
-	this.regConf = &register
+	this.RegConf = &register
 	return
 }
 
@@ -91,8 +91,8 @@ func (this *Registry) Init(option *rpc.Option) (err error) {
 	this.S2spost = option.Port
 
 	var _optn rpc.Option
-	_optn.Addr = this.regConf.Host
-	_optn.Port = this.regConf.Port
+	_optn.Addr = this.RegConf.Host
+	_optn.Port = this.RegConf.Port
 
 	this.client = heegrpc.NewHeegRpcClient(_optn)
 

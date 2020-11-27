@@ -5,6 +5,8 @@ import (
 	"net"
 )
 
+// 获取本机ip地址
+//
 func ExternalIP() (net.IP, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
