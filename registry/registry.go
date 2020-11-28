@@ -18,20 +18,23 @@ import (
 var defaultCtx = context.Background()
 
 type Registry struct {
-	s2sName map[string][]*S2sName
+	s2sName map[string][]*S2sName	// s2snode信息管理结构
 
 	mutex sync.Mutex
 	watch bool
 
-	S2sname string
-	S2shost string // s2s服务的地址信息"主机:端口"
-	S2spost int    //
+	S2sname string	// 当前节点的s2sname
+	S2shost string 	// 当前节点的监听地址
+	S2spost int    	// 当前节点的监听端口号
 
 	RegConf *registry_conf
 
 	client *rpc.HeegClient
 }
 
+// registry管理对象
+// 每个节点仅有一个registry管理对象
+// 主要是用于管理s2s相关的信息
 var _registry *Registry
 
 // 初始化当前节点信息
@@ -118,6 +121,7 @@ func (this *Registry) can() (err error) {
 }
 
 // 注册当前节点到s2s服务
+// 将当前节点注册到s2s服务中，以便其他服务发现这个服务
 //
 func (this *Registry) Register() (err error) {
 	err = this.can()
@@ -150,6 +154,7 @@ func (this *Registry) Register() (err error) {
 // 更新对应服务的prority
 //
 // @param s2s s2s节点
+// 
 func (this *Registry) IncPrority(s2s *s2sname.S2sname) {
 	if nil == s2s {
 		return
@@ -176,10 +181,11 @@ func (this *Registry) IncPrority(s2s *s2sname.S2sname) {
 	return
 }
 
-// 选择可以用的服务,选择负载最小的服务器
+// 选择服务,选择负载最小的服务器
 //
 // @param name
 // @return r 	s2s节点信息
+//
 func (this *Registry) Selector(name string) (r *S2sName, err error) {
 	if 0 == len(name) {
 		err = errors.New("Selector name is empty.")
@@ -225,6 +231,7 @@ func (this *Registry) Selector(name string) (r *S2sName, err error) {
 // 通过名称获取对应的s2s列表
 //
 // @param name  s2s名称
+//
 func (this *Registry) fetchs2sByName(name string) (err error) {
 	if "" == name {
 		err = errors.New("Name is empty.")
@@ -395,8 +402,9 @@ func (this *Registry) Heart() {
 	}
 }
 
-// 20分钟获取一次s2sname信息
+// 定时获取一次s2sname信息
 // 并刷新本地列表
+// 
 func (this *Registry) Watch() {
 	if this.watch {
 		return
