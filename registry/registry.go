@@ -207,7 +207,11 @@ func (this *Registry) Selector(name string) (r *S2sName, err error) {
 		}
 	}
 
-	r = this.s2sName[name][index]
+	r = &S2sName{
+		Host:    this.s2sName[name][index].Host,
+		Port:    this.s2sName[name][index].Port,
+		Prority: this.s2sName[name][index].Prority,
+	}
 
 	value := &s2sname.S2sname{
 		Host:    r.Host,
