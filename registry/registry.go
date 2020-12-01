@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -18,14 +19,14 @@ import (
 var defaultCtx = context.Background()
 
 type Registry struct {
-	s2sName map[string][]*S2sName	// s2snode信息管理结构
+	s2sName map[string][]*S2sName // s2snode信息管理结构
 
 	mutex sync.Mutex
 	watch bool
 
-	S2sname string	// 当前节点的s2sname
-	S2shost string 	// 当前节点的监听地址
-	S2spost int    	// 当前节点的监听端口号
+	S2sname string // 当前节点的s2sname
+	S2shost string // 当前节点的监听地址
+	S2spost int    // 当前节点的监听端口号
 
 	RegConf *registry_conf
 
@@ -56,25 +57,36 @@ func NewRegistry() *Registry {
 // 主要用于连接s2s服务器，用于注册和发现服务
 //
 func (this *Registry) s2sInfo(url string) {
+retry:
 	resp, err := http.Get(url)
 	if err != nil {
-		panic(err)
+		time.Sleep(2 * time.Second)
+		goto retry
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if nil != err {
-		panic(err)
+		log.Println("s2sinfo ReadAll err ", err)
+
+		time.Sleep(2 * time.Second)
+		goto retry
 	}
 
 	if 200 != resp.StatusCode {
-		panic("Request fail")
+		log.Println("S2s info Request fail, ", string(body))
+
+		time.Sleep(2 * time.Second)
+		goto retry
 	}
 
 	var register registry_conf
 	err = json.Unmarshal(body, &register)
 	if nil != err {
-		panic("s2sInfo err " + err.Error())
+		log.Println("s2sinfo Unmarshal err ", err)
+
+		time.Sleep(2 * time.Second)
+		goto retry
 	}
 
 	this.RegConf = &register
@@ -154,7 +166,7 @@ func (this *Registry) Register() (err error) {
 // 更新对应服务的prority
 //
 // @param s2s s2s节点
-// 
+//
 func (this *Registry) IncPrority(s2s *s2sname.S2sname) {
 	if nil == s2s {
 		return
@@ -408,7 +420,7 @@ func (this *Registry) Heart() {
 
 // 定时获取一次s2sname信息
 // 并刷新本地列表
-// 
+//
 func (this *Registry) Watch() {
 	if this.watch {
 		return

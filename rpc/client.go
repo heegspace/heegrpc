@@ -1,7 +1,10 @@
 package rpc
 
 import (
+	"time"
+
 	"github.com/heegspace/thrift"
+	log "github.com/sirupsen/logrus"
 )
 
 type HeegClient struct {
@@ -44,20 +47,28 @@ func (this *HeegClient) Close() {
 // 获取client对象
 //
 // @return 返回用于创建thrift client的信息
+//
 func (this *HeegClient) Client() *thrift.TStandardClient {
 	if !this.inited {
 		this.Init()
 	}
 
+retry:
 	// 主要是获取thrift服务的地址信息
 	tt, err := thrift.NewTSocket(this.option.Bind())
 	if nil != err {
-		panic(err.Error())
+		log.Println("NewTSocket err ", err, "  2s retry.")
+
+		time.Sleep(2 * time.Second)
+		goto retry
 	}
 	trans := thrift.NewTBufferedTransport(tt, 1*1024*1024)
 
 	if err = tt.Open(); err != nil {
-		panic(err.Error())
+		log.Println("NewTBufferedTransport Open() err ", err, "  2s retry.")
+
+		time.Sleep(2 * time.Second)
+		goto retry
 	}
 
 	iprot := this.protocolFactory.GetProtocol(trans)
