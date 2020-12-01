@@ -57,7 +57,7 @@ retry:
 	// 主要是获取thrift服务的地址信息
 	tt, err := thrift.NewTSocket(this.option.Bind())
 	if nil != err {
-		log.Println("NewTSocket err ", err, "  2s retry.")
+		log.Println(this.option, "NewTSocket err ", err, "  2s retry.")
 
 		time.Sleep(2 * time.Second)
 		goto retry
@@ -65,7 +65,7 @@ retry:
 	trans := thrift.NewTBufferedTransport(tt, 1*1024*1024)
 
 	if err = tt.Open(); err != nil {
-		log.Println("NewTBufferedTransport Open() err ", err, "  2s retry.")
+		log.Println(this.option, "NewTBufferedTransport Open() err ", err, "  2s retry.")
 
 		time.Sleep(2 * time.Second)
 		goto retry
