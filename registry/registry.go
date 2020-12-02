@@ -313,7 +313,7 @@ func (this *Registry) fetchs2s() (err error) {
 	defer this.mutex.Unlock()
 
 	// 更新s2spool数据
-	s2sPool = make(map[string][]*S2sName)
+	this.s2sPool = make(map[string][]*S2sName)
 	for _, v := range s2sres.S2ss {
 		if _, ok := this.s2sPool[v.Name]; !ok {
 			this.s2sPool[v.Name] = make([]*S2sName, 0)
