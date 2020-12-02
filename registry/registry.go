@@ -19,7 +19,7 @@ import (
 var defaultCtx = context.Background()
 
 type Registry struct {
-	s2sName map[string][]*S2sName // s2snode信息管理结构
+	s2sPool map[string][]*S2sName // s2snode信息管理结构
 
 	mutex sync.Mutex
 	watch bool
@@ -47,7 +47,7 @@ func NewRegistry() *Registry {
 
 	_registry = &Registry{
 		watch:   false,
-		s2sName: make(map[string][]*S2sName),
+		s2sPool: make(map[string][]*S2sName),
 	}
 
 	return _registry
@@ -208,7 +208,7 @@ func (this *Registry) Selector(name string) (r *S2sName, err error) {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 
-	if _, ok := this.s2sName[name]; !ok {
+	if _, ok := this.s2sPool[name]; !ok {
 		err = errors.New("Didn't name's service!")
 
 		return
@@ -216,7 +216,7 @@ func (this *Registry) Selector(name string) (r *S2sName, err error) {
 
 	index := 0
 	prority := int32(999999999)
-	for k, v := range this.s2sName[name] {
+	for k, v := range this.s2sPool[name] {
 		if prority > v.Prority {
 			index = k
 			prority = v.Prority
@@ -226,9 +226,9 @@ func (this *Registry) Selector(name string) (r *S2sName, err error) {
 	}
 
 	r = &S2sName{
-		Host:    this.s2sName[name][index].Host,
-		Port:    this.s2sName[name][index].Port,
-		Prority: this.s2sName[name][index].Prority,
+		Host:    this.s2sPool[name][index].Host,
+		Port:    this.s2sPool[name][index].Port,
+		Prority: this.s2sPool[name][index].Prority,
 	}
 
 	value := &s2sname.S2sname{
@@ -272,39 +272,20 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 
+	this.s2sPool[name] = make([]*S2sName, 0)
 	for _, v := range s2sres.S2ss {
-		if _, ok := this.s2sName[v.Name]; !ok {
-			this.s2sName[v.Name] = make([]*S2sName, 0)
+		// 如果不是对应的name就直接下一次
+		if name != v.Name {
+			continue
 		}
 
-		// 更新或插入s2s信息【可优化】
-		exists := false
-		list := this.s2sName[v.Name]
-		for k1, v1 := range list {
-
-			// 找出是否已经存在相同的节点信息
-			// 如果存在则直接更新
-			vitem := fmt.Sprintf("%s:%d", v.Host, v.Port)
-			v1item := fmt.Sprintf("%s:%d", v1.Host, v1.Port)
-
-			if vitem == v1item {
-				exists = true
-				this.s2sName[v.Name][k1] = v1
-
-				break
-			}
+		value := &S2sName{
+			Host:    v.Host,
+			Port:    v.Port,
+			Prority: v.Prority,
 		}
 
-		// 不存在则将节点追加到管理器中
-		if !exists {
-			value := &S2sName{
-				Host:    v.Host,
-				Port:    v.Port,
-				Prority: v.Prority,
-			}
-
-			this.s2sName[v.Name] = append(this.s2sName[v.Name], value)
-		}
+		this.s2sPool[v.Name] = append(this.s2sPool[v.Name], value)
 	}
 
 	return
@@ -331,49 +312,23 @@ func (this *Registry) fetchs2s() (err error) {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 
+	// 更新s2spool数据
+	s2sPool = make(map[string][]*S2sName)
 	for _, v := range s2sres.S2ss {
-		if _, ok := this.s2sName[v.Name]; !ok {
-			this.s2sName[v.Name] = make([]*S2sName, 0)
+		if _, ok := this.s2sPool[v.Name]; !ok {
+			this.s2sPool[v.Name] = make([]*S2sName, 0)
 		}
 
-		// 更新或插入s2s信息【可优化】
-		exists := false
-		list := this.s2sName[v.Name]
-		for k1, v1 := range list {
-
-			// 找出是否已经存在相同的节点信息
-			// 如果存在则直接更新
-			vitem := fmt.Sprintf("%s:%d", v.Host, v.Port)
-			v1item := fmt.Sprintf("%s:%d", v1.Host, v1.Port)
-
-			if vitem == v1item {
-				exists = true
-
-				value := &S2sName{
-					Host:    v.Host,
-					Port:    v.Port,
-					Prority: v.Prority,
-				}
-
-				this.s2sName[v.Name][k1] = value
-
-				break
-			}
+		value := &S2sName{
+			Host:    v.Host,
+			Port:    v.Port,
+			Prority: v.Prority,
 		}
 
-		// 不存在则将节点追加到管理器中
-		if !exists {
-			value := &S2sName{
-				Host:    v.Host,
-				Port:    v.Port,
-				Prority: v.Prority,
-			}
-
-			this.s2sName[v.Name] = append(this.s2sName[v.Name], value)
-		}
+		this.s2sPool[v.Name] = append(this.s2sPool[v.Name], value)
 	}
 
-	// data, _ := json.Marshal(this.s2sName)
+	// data, _ := json.Marshal(this.s2sPool)
 	// fmt.Println("fetchs2s: ", string(data))
 	return
 }
