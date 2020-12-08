@@ -151,7 +151,10 @@ func (this *Registry) Register() (err error) {
 		},
 	}
 
-	thclient := s2sname.NewS2snameServiceClient(this.client.Client())
+	clt, trans := this.client.Client()
+	defer trans.Close()
+
+	thclient := s2sname.NewS2snameServiceClient(clt)
 	res, err := thclient.RegisterS2sname(defaultCtx, req)
 	if nil != err {
 		return
@@ -183,7 +186,10 @@ func (this *Registry) IncPrority(s2s *s2sname.S2sname) {
 		},
 	}
 
-	thclient := s2sname.NewS2snameServiceClient(this.client.Client())
+	clt, trans := this.client.Client()
+	defer trans.Close()
+
+	thclient := s2sname.NewS2snameServiceClient(clt)
 	s2sres, err := thclient.UpdateS2sname(defaultCtx, req)
 	if nil != err {
 		return
@@ -255,7 +261,10 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 		return
 	}
 
-	thclient := s2sname.NewS2snameServiceClient(this.client.Client())
+	clt, trans := this.client.Client()
+	defer trans.Close()
+
+	thclient := s2sname.NewS2snameServiceClient(clt)
 	s2sres, err := thclient.FetchS2sname(defaultCtx, name)
 	if nil != err || nil == s2sres {
 		return
@@ -295,7 +304,10 @@ func (this *Registry) fetchs2sByName(name string) (err error) {
 // 并更新到s2sname数组中
 //
 func (this *Registry) fetchs2s() (err error) {
-	thclient := s2sname.NewS2snameServiceClient(this.client.Client())
+	clt, trans := this.client.Client()
+	defer trans.Close()
+
+	thclient := s2sname.NewS2snameServiceClient(clt)
 	s2sres, err := thclient.FetchS2snames(defaultCtx)
 	if nil != err || nil == s2sres {
 		return
@@ -351,7 +363,10 @@ func (this *Registry) heart() {
 		},
 	}
 
-	thclient := s2sname.NewS2snameServiceClient(this.client.Client())
+	clt, trans := this.client.Client()
+	defer trans.Close()
+
+	thclient := s2sname.NewS2snameServiceClient(clt)
 	_, err = thclient.Heart(defaultCtx, req)
 	if nil != err {
 		fmt.Println("Send Heart error ", err)
