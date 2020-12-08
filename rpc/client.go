@@ -48,7 +48,7 @@ func (this *HeegClient) Close() {
 //
 // @return 返回用于创建thrift client的信息
 //
-func (this *HeegClient) Client() *thrift.TStandardClient {
+func (this *HeegClient) Client() *thrift.TStandardClient, *thrift.TBufferedTransport {
 	if !this.inited {
 		this.Init()
 	}
@@ -74,5 +74,5 @@ retry:
 	iprot := this.protocolFactory.GetProtocol(trans)
 	oprot := this.protocolFactory.GetProtocol(trans)
 
-	return thrift.NewTStandardClient(iprot, oprot)
+	return thrift.NewTStandardClient(iprot, oprot), trans
 }
