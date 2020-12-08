@@ -48,7 +48,7 @@ func (this *HeegClient) Close() {
 //
 // @return 返回用于创建thrift client的信息
 //
-func (this *HeegClient) Client() *thrift.TStandardClient, *thrift.TBufferedTransport {
+func (this *HeegClient) Client() (*thrift.TStandardClient, *thrift.TBufferedTransport) {
 	if !this.inited {
 		this.Init()
 	}
