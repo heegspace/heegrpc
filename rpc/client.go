@@ -24,6 +24,10 @@ func NewHeegClient(option Option) *HeegClient {
 		option: option,
 	}
 
+	if option.Debug {
+		thrift.Debug = true
+	}
+
 	return v
 }
 
