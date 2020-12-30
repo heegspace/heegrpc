@@ -2,6 +2,7 @@ package heegrpc
 
 import (
 	"github.com/heegspace/heegrpc/rpc"
+	"github.com/heegspace/thrift"
 )
 
 var _heegServer *rpc.HeegServer
@@ -29,4 +30,10 @@ func NewHeegRpcClient(option rpc.Option) *rpc.HeegClient {
 	v := rpc.NewHeegClient(option)
 
 	return v
+}
+
+func Debug(debug bool) {
+	thrift.Debug = debug
+
+	return
 }

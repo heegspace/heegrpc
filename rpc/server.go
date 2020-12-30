@@ -28,10 +28,6 @@ func NewHeegServer(option Option) *HeegServer {
 		Option: option,
 	}
 
-	if option.Debug {
-		thrift.Debug = true
-	}
-
 	return v
 }
 

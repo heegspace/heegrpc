@@ -15,7 +15,6 @@ type Option struct {
 	S2sKey  string // 节点的s2s key信息
 
 	CallTimeout int
-	Debug       bool
 
 	ListenFunc thrift.LISTEN_FUNC // 监听成功的回调函数
 }
