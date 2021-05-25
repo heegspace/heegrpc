@@ -53,22 +53,21 @@ func (this *HeegClient) Client() (*thrift.TStandardClient, *thrift.TBufferedTran
 		this.Init()
 	}
 
-retry:
 	// 主要是获取thrift服务的地址信息
 	tt, err := thrift.NewTSocket(this.option.Bind())
 	if nil != err {
-		log.Println(this.option, "NewTSocket err ", err, "  2s retry.")
+		log.Println(this.option, "NewTSocket err ", err)
 
-		time.Sleep(2 * time.Second)
-		goto retry
+		return nil.nil
 	}
-	trans := thrift.NewTBufferedTransport(tt, 1*1024*1024)
+
+	// 4M
+	trans := thrift.NewTBufferedTransport(tt, 4*1024*1024)
 
 	if err = tt.Open(); err != nil {
-		log.Println(this.option, "NewTBufferedTransport Open() err ", err, "  2s retry.")
+		log.Println(this.option, "NewTBufferedTransport Open() err ", err)
 
-		time.Sleep(2 * time.Second)
-		goto retry
+		return nil, nil
 	}
 
 	iprot := this.protocolFactory.GetProtocol(trans)
