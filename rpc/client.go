@@ -1,8 +1,6 @@
 package rpc
 
 import (
-	"time"
-
 	"github.com/heegspace/thrift"
 	log "github.com/sirupsen/logrus"
 )
@@ -58,7 +56,7 @@ func (this *HeegClient) Client() (*thrift.TStandardClient, *thrift.TBufferedTran
 	if nil != err {
 		log.Println(this.option, "NewTSocket err ", err)
 
-		return nil.nil
+		return nil, nil
 	}
 
 	// 4M
