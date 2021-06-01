@@ -11,10 +11,10 @@ import (
 
 	grpc "github.com/asim/go-micro/plugins/transport/grpc/v3"
 
-	registry "github.com/heegspace/heegrpc/registry"
+	s2s "github.com/heegspace/heegrpc/registry"
 
 	"github.com/asim/go-micro/v3/config"
-	goregistry "github.com/asim/go-micro/v3/registry"
+	registry "github.com/asim/go-micro/v3/registry"
 
 	"github.com/asim/go-micro/v3"
 	"github.com/asim/go-micro/v3/client"
@@ -47,7 +47,7 @@ func NewService() micro.Service {
 	// 设置限流，设置能同时处理的请求数，超过这个数就不继续处理
 	br := ratelimit.NewBucketWithRate(float64(config.Get("rate").Int(1000)), int64(config.Get("rate").Int(1000)+200))
 
-	regis := registry.NewRegistry(goregistry.Addrs(config.Get("s2s", "address").String("")))
+	regis := s2s.NewRegistry(registry.Addrs(config.Get("s2s", "address").String("")))
 	svr := micro.NewService(
 		micro.Name(config.Get("name").String("")),
 		micro.Transport(grpc.NewTransport()),
