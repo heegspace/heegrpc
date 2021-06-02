@@ -13,13 +13,14 @@ import (
 
 	s2s "github.com/heegspace/heegrpc/registry"
 
-	"github.com/asim/go-micro/v3/config"
 	registry "github.com/asim/go-micro/v3/registry"
 
 	"github.com/asim/go-micro/v3"
 	"github.com/asim/go-micro/v3/client"
 	"github.com/asim/go-micro/v3/server"
 	"github.com/juju/ratelimit"
+
+	"github.com/micro/go-micro/v2/config"
 )
 
 // 客户端调用追踪
@@ -35,9 +36,10 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 // 服务端日志跟踪
 func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 	return func(ctx context.Context, req server.Request, rsp interface{}) error {
-		log.Printf("[Log Wrapper] Before serving request method: %v", req.Endpoint())
+		log.Printf("[Log Wrapper] Before serving request method: %s, Endpoint: %s", req.Method(), req.Endpoint())
 		err := fn(ctx, req, rsp)
-		log.Printf("[Log Wrapper] After serving request, %v", err)
+		log.Printf("[Log Wrapper] After serving request, method: %s, %v", req.Method(), err)
+
 		return err
 	}
 }
@@ -75,6 +77,8 @@ func NewService() micro.Service {
 		// 服务端被调跟踪，每个请求被处理之前都会调用这个中间件函数
 		micro.WrapHandler(logWrapper),
 	)
+
+	svr.Init()
 
 	return svr
 }
