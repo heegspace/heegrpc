@@ -170,7 +170,9 @@ func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*regis
 			gerr = err
 			continue
 		}
-		logger.Info("GetService ", service, services)
+
+		data, _ := json.Marshal(services)
+		logger.Info("GetService ", service, string(data))
 
 		return services, nil
 	}
@@ -214,7 +216,8 @@ func (s *proxy) ListServices(opts ...registry.ListOption) ([]*registry.Service, 
 			continue
 		}
 
-		logger.Info("ListServices ", services)
+		data, _ := json.Marshal(services)
+		logger.Info("ListServices ", string(data))
 
 		return services, nil
 	}
