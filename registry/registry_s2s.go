@@ -12,6 +12,7 @@ import (
 	"net/url"
 
 	"github.com/asim/go-micro/v3/cmd"
+	"github.com/asim/go-micro/v3/logger"
 	"github.com/asim/go-micro/v3/registry"
 )
 
@@ -169,8 +170,11 @@ func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*regis
 			gerr = err
 			continue
 		}
+		logger.Info("GetService ", service, services)
+
 		return services, nil
 	}
+
 	return nil, gerr
 }
 
@@ -209,6 +213,9 @@ func (s *proxy) ListServices(opts ...registry.ListOption) ([]*registry.Service, 
 			gerr = err
 			continue
 		}
+
+		logger.Info("ListServices ", services)
+
 		return services, nil
 	}
 	return nil, gerr
@@ -220,7 +227,6 @@ func (s *proxy) Watch(opts ...registry.WatchOption) (registry.Watcher, error) {
 		o(&wo)
 	}
 
-	fmt.Println("Watch----------")
 	watch := func(addr string) (registry.Watcher, error) {
 		scheme := "ws"
 		if s.opts.Secure {
