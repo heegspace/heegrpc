@@ -142,7 +142,7 @@ func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*regis
 			scheme = "https"
 		}
 
-		url := fmt.Sprintf("%s://%s/registry?service=%s", scheme, addr, url.QueryEscape(service))
+		url := fmt.Sprintf("%s://%s/registry/%s", scheme, addr, url.QueryEscape(service))
 		rsp, err := http.Get(url)
 		if err != nil {
 			gerr = err
