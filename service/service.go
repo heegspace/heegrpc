@@ -48,7 +48,10 @@ func NewService() micro.Service {
 	// 设置限流，设置能同时处理的请求数，超过这个数就不继续处理
 	br := ratelimit.NewBucketWithRate(float64(config.Get("rate").Int(1000)), int64(config.Get("rate").Int(1000)+200))
 
-	regis := s2s.NewRegistry(registry.Addrs(config.Get("s2s", "address").String("")))
+	regis := s2s.NewRegistry(
+		registry.Addrs(config.Get("s2s", "address").String("")),
+		registry.Secure(config.Get("s2s", "secure").String("http")),
+	)
 	svr := micro.NewService(
 		micro.Name(config.Get("name").String("")),
 		micro.Transport(grpc.NewTransport()),
