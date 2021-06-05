@@ -50,7 +50,7 @@ func NewService() micro.Service {
 
 	regis := s2s.NewRegistry(
 		registry.Addrs(config.Get("s2s", "address").String("")),
-		registry.Secure(config.Get("s2s", "secure").String("http")),
+		registry.Secure(config.Get("s2s", "secure").Bool(false)),
 	)
 	svr := micro.NewService(
 		micro.Name(config.Get("name").String("")),
