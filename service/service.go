@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"time"
 
 	"github.com/asim/go-micro/plugins/wrapper/breaker/hystrix/v3"
@@ -17,6 +15,7 @@ import (
 
 	"github.com/asim/go-micro/v3"
 	"github.com/asim/go-micro/v3/client"
+	"github.com/asim/go-micro/v3/logger"
 	"github.com/asim/go-micro/v3/server"
 	"github.com/juju/ratelimit"
 
@@ -28,7 +27,8 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 	return func(ctx context.Context, node *registry.Node, req client.Request, rsp interface{}, opts client.CallOptions) error {
 		t := time.Now()
 		err := cf(ctx, node, req, rsp, opts)
-		fmt.Printf("[Metrics Wrapper] called: %v %s.%s duration: %v\n", node, req.Service(), req.Endpoint(), time.Since(t))
+
+		logger.Infof("[Metrics Wrapper]Node: %v, Service: %v,  Endpoint: %s, err: %v, duration: %v\n", node, req.Service(), req.Endpoint(), err, time.Since(t))
 		return err
 	}
 }
@@ -36,9 +36,8 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 // 服务端日志跟踪
 func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 	return func(ctx context.Context, req server.Request, rsp interface{}) error {
-		log.Printf("[Log Wrapper] Before serving request method: %s, Endpoint: %s", req.Method(), req.Endpoint())
 		err := fn(ctx, req, rsp)
-		log.Printf("[Log Wrapper] After serving request, method: %s, %v", req.Method(), err)
+		logger.Infof("[Log Wrapper] Endpoint: %s,  method: %s, errinfo: %v", req.Endpoint(), req.Method(), err)
 
 		return err
 	}
