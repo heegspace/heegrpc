@@ -95,7 +95,7 @@ func NewService() micro.Service {
 //
 // @return micro.Service
 //
-func HttpService(router *gin.Engine, opts ...Option) micro.Service {
+func HttpService(router *gin.Engine) micro.Service {
 	srv := httpServer.NewServer(
 		server.Name(config.Get("name").String("")),
 		server.Version(config.Get("version").String("0.0.1")),
@@ -114,7 +114,6 @@ func HttpService(router *gin.Engine, opts ...Option) micro.Service {
 	svrice := micro.NewService(
 		micro.Server(srv),
 		micro.Registry(regis),
-		opts...,
 	)
 
 	svrice.Init()
