@@ -4,22 +4,24 @@ import (
 	"context"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/asim/go-micro/plugins/wrapper/breaker/hystrix/v3"
-	ratelimiter "github.com/asim/go-micro/plugins/wrapper/ratelimiter/ratelimit/v3"
-
-	grpc "github.com/asim/go-micro/plugins/transport/grpc/v3"
-
-	s2s "github.com/heegspace/heegrpc/registry"
-
-	registry "github.com/asim/go-micro/v3/registry"
-
 	"github.com/asim/go-micro/v3"
 	"github.com/asim/go-micro/v3/client"
 	"github.com/asim/go-micro/v3/logger"
+	"github.com/asim/go-micro/v3/metadata"
+	"github.com/asim/go-micro/v3/selector"
 	"github.com/asim/go-micro/v3/server"
 	"github.com/juju/ratelimit"
-
 	"github.com/micro/go-micro/v2/config"
+
+	httpClient "github.com/asim/go-micro/plugins/client/http/v3"
+	httpServer "github.com/asim/go-micro/plugins/server/http/v3"
+	grpc "github.com/asim/go-micro/plugins/transport/grpc/v3"
+	ratelimiter "github.com/asim/go-micro/plugins/wrapper/ratelimiter/ratelimit/v3"
+	registry "github.com/asim/go-micro/v3/registry"
+	s2s "github.com/heegspace/heegrpc/registry"
 )
 
 // 客户端调用追踪
@@ -37,12 +39,16 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 	return func(ctx context.Context, req server.Request, rsp interface{}) error {
 		err := fn(ctx, req, rsp)
-		logger.Infof("[Log Wrapper] Endpoint: %s,  method: %s, errinfo: %v", req.Endpoint(), req.Method(), err)
+
+		md, _ := metadata.FromContext(ctx)
+		logger.Infof("[Log Wrapper] Endpoint: %s,  method: %s, from: %s, ip: %s, errinfo: %v", req.Endpoint(), req.Method(), md["Remote"], md["Local"], err)
 
 		return err
 	}
 }
 
+// 获取服务对象
+//
 func NewService() micro.Service {
 	// Create a new service. Optionally include some options here.
 	// 设置限流，设置能同时处理的请求数，超过这个数就不继续处理
@@ -83,4 +89,72 @@ func NewService() micro.Service {
 	svr.Init()
 
 	return svr
+}
+
+// 获取http服务对象
+//
+// @return micro.Service
+//
+func HttpService(router *gin.Engine) micro.Service {
+	srv := httpServer.NewServer(
+		server.Name(config.Get("name").String("")),
+		server.Version(config.Get("version").String("0.0.1")),
+	)
+
+	hd := srv.NewHandler(router)
+	err := srv.Handle(hd)
+	if nil != err {
+		panic(err)
+	}
+
+	regis := s2s.NewRegistry(
+		registry.Addrs(config.Get("s2s", "address").String("")),
+		registry.Secure(config.Get("s2s", "secure").Bool(false)),
+	)
+	svrice := micro.NewService(
+		micro.Server(srv),
+		micro.Registry(regis),
+	)
+
+	svrice.Init()
+	return svrice
+}
+
+// 获取http客户端对象
+//
+// @return Client
+//
+func HttpClient() client.Client {
+	regis := s2s.NewRegistry(
+		registry.Addrs(config.Get("s2s", "address").String("")),
+		registry.Secure(config.Get("s2s", "secure").Bool(false)),
+	)
+
+	s := selector.NewSelector(selector.Registry(regis))
+	httpcli := httpClient.NewClient(client.Selector(s))
+	return httpcli
+}
+
+// 发起http请求
+//
+// @param 	svrname		服务名
+// @param 	method 		调用方法名或路径名
+// @param 	request 	请求体
+// @param 	response 	响应数据
+// @param 	contentType	请求数据类型
+// @return 	{error}
+//
+func HttpRequest(svrname, method string, request, response interface{}, contentType string) (err error) {
+	defer func() {
+		logger.Info("HttpRequest", "svrname: "+svrname, "method: "+method, "contentType: ", contentType)
+	}()
+
+	cli := HttpClient()
+	req := cli.NewRequest(svrname, method, request, client.WithContentType(contentType))
+	err = cli.Call(context.Background(), req, response)
+	if nil != err {
+		return
+	}
+
+	return
 }
