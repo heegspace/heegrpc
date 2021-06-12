@@ -140,7 +140,7 @@ func HttpCodec(contentType string) (codec Codec, err error) {
 		return
 	}
 
-	code = defaultHTTPCodecs[contentType]
+	codec = defaultHTTPCodecs[contentType]
 	return
 }
 
