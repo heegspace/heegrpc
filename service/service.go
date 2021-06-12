@@ -173,6 +173,18 @@ func HttpRequest(svrname, method string, request, response interface{}, contentT
 		logger.Info("HttpRequest", "svrname: "+svrname, "method: "+method, "contentType: ", contentType)
 	}()
 
+	if 0 == len(contentType) {
+		err = errors.New("contentType is nil")
+
+		return
+	}
+
+	if _, ok := defaultHTTPCodecs[contentType]; !ok {
+		err = errors.New("Not support codec. only support application/json,proto,protobuf and octet-stream.")
+
+		return
+	}
+
 	cli := HttpClient()
 	req := cli.NewRequest(svrname, method, request, client.WithContentType(contentType))
 	err = cli.Call(context.Background(), req, response)
