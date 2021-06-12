@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -118,6 +119,29 @@ func HttpService(router *gin.Engine) micro.Service {
 
 	svrice.Init()
 	return svrice
+}
+
+// 获取http服务中对数据的编码器
+// 主要用来编解码HTTP服务数据
+//
+// @param contentType 	数据类型
+// @return {codec, err}
+//
+func HttpCodec(contentType string) (codec Codec, err error) {
+	if 0 == len(contentType) {
+		err = errors.New("contentType is nil")
+
+		return
+	}
+
+	if _, ok := defaultHTTPCodecs[contentType]; !ok {
+		err = errors.New("Not support codec. only support application/json,proto,protobuf and octet-stream.")
+
+		return
+	}
+
+	code = defaultHTTPCodecs[contentType]
+	return
 }
 
 // 获取http客户端对象
