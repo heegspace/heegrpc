@@ -46,7 +46,7 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 			Method:  req.Method(),
 			Remote:  md["Remote"],
 			Localip: md["Local"],
-			Timeout: time.Since(t),
+			Timeout: int64(time.Since(t)),
 			Extra: map[string]string{
 				"error": errstr(err),
 				"type":  "client",
@@ -74,7 +74,7 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 			Method:  req.Method(),
 			Remote:  md["Remote"],
 			Localip: md["Local"],
-			Timeout: time.Since(t),
+			Timeout: int64(time.Since(t)),
 			Extra: map[string]string{
 				"error": errstr(err),
 				"type":  "service",
