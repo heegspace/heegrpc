@@ -22,8 +22,17 @@ import (
 	grpc "github.com/asim/go-micro/plugins/transport/grpc/v3"
 	ratelimiter "github.com/asim/go-micro/plugins/wrapper/ratelimiter/ratelimit/v3"
 	registry "github.com/asim/go-micro/v3/registry"
+	foot "github.com/heegspace/heegrpc/callfoot"
 	s2s "github.com/heegspace/heegrpc/registry"
 )
+
+func errstr(err error) string {
+	if nil == err {
+		return ""
+	}
+
+	return err.Error()
+}
 
 // 客户端调用追踪
 func metricsWrap(cf client.CallFunc) client.CallFunc {
@@ -31,7 +40,24 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 		t := time.Now()
 		err := cf(ctx, node, req, rsp, opts)
 
-		logger.Infof("[Metrics Wrapper]Node: %v, Service: %v,  Endpoint: %s, err: %v, duration: %v\n", node, req.Service(), req.Endpoint(), err, time.Since(t))
+		md, _ := metadata.FromContext(ctx)
+		freq := foot.RPCFootReq{
+			Svrname: req.Service(),
+			Method:  req.Method(),
+			Remote:  md["Remote"],
+			Localip: md["Local"],
+			Timeout: time.Since(t),
+			Extra: map[string]string{
+				"error": errstr(err),
+				"type":  "client",
+			},
+		}
+
+		// 上报数据到统计服务
+		var fres foot.RPCFootRes
+		ferr := HttpRequest(config.Get("statis", "svrname").String("footnode"), config.Get("static", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
+
+		logger.Infof("[Metrics Wrapper]Node: %v, Service: %v,  Endpoint: %s, err: %v, ferr: %v, duration: %v\n", node, req.Service(), req.Endpoint(), err, ferr, time.Since(t))
 		return err
 	}
 }
@@ -39,11 +65,27 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 // 服务端日志跟踪
 func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 	return func(ctx context.Context, req server.Request, rsp interface{}) error {
+		t := time.Now()
 		err := fn(ctx, req, rsp)
 
 		md, _ := metadata.FromContext(ctx)
-		logger.Infof("[Log Wrapper] Endpoint: %s,  method: %s, from: %s, ip: %s, errinfo: %v", req.Endpoint(), req.Method(), md["Remote"], md["Local"], err)
+		freq := foot.RPCFootReq{
+			Svrname: req.Service(),
+			Method:  req.Method(),
+			Remote:  md["Remote"],
+			Localip: md["Local"],
+			Timeout: time.Since(t),
+			Extra: map[string]string{
+				"error": errstr(err),
+				"type":  "service",
+			},
+		}
 
+		// 上报数据到统计服务
+		var fres foot.RPCFootRes
+		ferr := HttpRequest(config.Get("statis", "svrname").String("footnode"), config.Get("static", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
+
+		logger.Infof("[Log Wrapper] Endpoint: %s,  method: %s, from: %s, ip: %s, errinfo: %v, ferrinfo: %v", req.Endpoint(), req.Method(), md["Remote"], md["Local"], err, ferr)
 		return err
 	}
 }
@@ -172,6 +214,12 @@ func HttpRequest(svrname, method string, request, response interface{}, contentT
 	defer func() {
 		logger.Info("HttpRequest", "svrname: "+svrname, "method: "+method, "contentType: ", contentType)
 	}()
+
+	if 0 == len(svrname) || 0 == len(method) {
+		logger.Error("HttpRequest param errror")
+
+		return
+	}
 
 	if 0 == len(contentType) {
 		err = errors.New("contentType is nil")
