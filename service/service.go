@@ -41,7 +41,7 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 		err := cf(ctx, node, req, rsp, opts)
 
 		md, _ := metadata.FromContext(ctx)
-		freq := foot.RPCFootReq{
+		freq := &foot.RPCFootReq{
 			Svrname: req.Service(),
 			Method:  req.Method(),
 			Remote:  md["Remote"],
@@ -69,7 +69,7 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 		err := fn(ctx, req, rsp)
 
 		md, _ := metadata.FromContext(ctx)
-		freq := foot.RPCFootReq{
+		freq := &foot.RPCFootReq{
 			Svrname: req.Service(),
 			Method:  req.Method(),
 			Remote:  md["Remote"],
