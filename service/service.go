@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	hystrixsrc "github.com/afex/hystrix-go/hystrix"
 	"github.com/gin-gonic/gin"
 
 	"github.com/asim/go-micro/plugins/wrapper/breaker/hystrix/v3"
@@ -15,6 +16,7 @@ import (
 	"github.com/asim/go-micro/v3/selector"
 	"github.com/asim/go-micro/v3/server"
 	"github.com/juju/ratelimit"
+	"github.com/micro/go-micro/config"
 	"github.com/micro/go-micro/v2/config"
 
 	httpClient "github.com/asim/go-micro/plugins/client/http/v3"
@@ -93,6 +95,8 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 // 获取服务对象
 //
 func NewService() micro.Service {
+	hystrixsrc.DefaultTimeout = config.Get("timeout").Int(3) * 1000
+
 	// Create a new service. Optionally include some options here.
 	// 设置限流，设置能同时处理的请求数，超过这个数就不继续处理
 	br := ratelimit.NewBucketWithRate(float64(config.Get("rate").Int(1000)), int64(config.Get("rate").Int(1000)+200))
