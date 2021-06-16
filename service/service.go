@@ -16,7 +16,6 @@ import (
 	"github.com/asim/go-micro/v3/selector"
 	"github.com/asim/go-micro/v3/server"
 	"github.com/juju/ratelimit"
-	"github.com/micro/go-micro/config"
 	"github.com/micro/go-micro/v2/config"
 
 	httpClient "github.com/asim/go-micro/plugins/client/http/v3"
