@@ -239,7 +239,7 @@ func HttpRequest(svrname, method string, request, response interface{}, contentT
 	cli := HttpClient()
 	req := cli.NewRequest(svrname, method, request, client.WithContentType(contentType))
 	if 0 < len(address) {
-		err = cli.Call(context.Background(), req, response, client.WithAddress(...address))
+		err = cli.Call(context.Background(), req, response, client.WithAddress(address...))
 		if nil != err {
 			return
 		}
