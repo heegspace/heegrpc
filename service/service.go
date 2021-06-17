@@ -213,7 +213,7 @@ func HttpClient() client.Client {
 // @param 	contentType	请求数据类型
 // @return 	{error}
 //
-func HttpRequest(svrname, method string, request, response interface{}, contentType string) (err error) {
+func HttpRequest(svrname, method string, request, response interface{}, contentType string, address ...string) (err error) {
 	defer func() {
 		logger.Info("HttpRequest", "svrname: "+svrname, "method: "+method, "contentType: ", contentType)
 	}()
@@ -238,9 +238,16 @@ func HttpRequest(svrname, method string, request, response interface{}, contentT
 
 	cli := HttpClient()
 	req := cli.NewRequest(svrname, method, request, client.WithContentType(contentType))
-	err = cli.Call(context.Background(), req, response)
-	if nil != err {
-		return
+	if 0 < len(address) {
+		err = cli.Call(context.Background(), req, response, client.WithAddress(address))
+		if nil != err {
+			return
+		}
+	} else {
+		err = cli.Call(context.Background(), req, response)
+		if nil != err {
+			return
+		}
 	}
 
 	return
