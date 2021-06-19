@@ -58,6 +58,20 @@ func (s *proxy) Options() registry.Options {
 }
 
 func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOption) error {
+	if nil == service {
+		err := errors.New("service is nil")
+
+		return err
+	}
+
+	if nil == service.Metadata {
+		service.Metadata = make(map[string]string)
+	}
+	name, _ := os.Hostname()
+	service.Metadata["hostname"] = name
+	service.Metadata["os"] = runtime.GOOS
+	service.Metadata["cpunum"] = fmt.Sprintf("%d", runtime.GOMAXPROCS(0)) 
+
 	b, err := json.Marshal(service)
 	if err != nil {
 		return err
