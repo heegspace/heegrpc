@@ -7,16 +7,73 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"runtime"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/asim/go-micro/v3/cmd"
 	"github.com/asim/go-micro/v3/logger"
 	"github.com/asim/go-micro/v3/registry"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/disk"
+	"github.com/shirou/gopsutil/v3/host"
+	"github.com/shirou/gopsutil/v3/mem"
 )
+
+type SysInfo struct {
+	HostName   string  `json:"hostname,omitempty"`
+	OS         string  `json:"os,omitempty"`
+	CpuNum     int     `json:"cpu_num,omitempty"`
+	CpuPercent float64 `json:"cpu_percent,omitempty"`
+	MemTotal   uint64  `json:"mem_total,omitempty"`
+	MemUsed    uint64  `json:"mem_used,omitempty"`
+	DiskTotal  uint64  `json:"disk_total,omitempty"`
+	DiskUsed   uint64  `json:"disk_used,omitempty"`
+}
+
+func getsysinfo() string {
+	var sysinfo SysInfo
+
+	hostinfo, err := host.Info()
+	if nil == err {
+		sysinfo.HostName = hostinfo.Hostname
+		sysinfo.OS = hostinfo.OS
+	}
+
+	count, err := cpu.Counts(true)
+	if nil == err {
+		sysinfo.CpuNum = count
+	}
+
+	percent, err := cpu.Percent(time.Second, false)
+	if nil == err && 0 < len(percent) {
+		sysinfo.CpuPercent = percent[0]
+	}
+
+	memInfo, err := mem.VirtualMemory()
+	if nil == err && nil != memInfo {
+		sysinfo.MemTotal = memInfo.Total
+		sysinfo.MemUsed = memInfo.Used
+	}
+
+	parts, err := disk.Partitions(true)
+	if nil == err && 0 < len(parts) {
+		for _, v := range parts {
+			diskInfo, err := disk.Usage(v.Mountpoint)
+			if nil != err {
+				continue
+			}
+
+			sysinfo.DiskTotal = sysinfo.DiskTotal + diskInfo.Total
+			sysinfo.DiskUsed = sysinfo.DiskUsed + diskInfo.Used
+		}
+
+	}
+
+	info, _ := json.Marshal(sysinfo)
+	return string(info)
+}
 
 type proxy struct {
 	opts registry.Options
@@ -69,10 +126,7 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 	if nil == service.Metadata {
 		service.Metadata = make(map[string]string)
 	}
-	name, _ := os.Hostname()
-	service.Metadata["hostname"] = name
-	service.Metadata["os"] = runtime.GOOS
-	service.Metadata["cpunum"] = fmt.Sprintf("%d", runtime.GOMAXPROCS(0)) 
+	service.Metadata["sysinfo"] = getsysinfo()
 
 	b, err := json.Marshal(service)
 	if err != nil {
