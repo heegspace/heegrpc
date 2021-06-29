@@ -15,6 +15,7 @@ import (
 	"github.com/asim/go-micro/v3/cmd"
 	"github.com/asim/go-micro/v3/logger"
 	"github.com/asim/go-micro/v3/registry"
+	"github.com/asim/go-micro/v3/util/addr"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
@@ -22,14 +23,15 @@ import (
 )
 
 type SysInfo struct {
-	HostName   string  `json:"hostname,omitempty"`
-	OS         string  `json:"os,omitempty"`
-	CpuNum     int     `json:"cpu_num,omitempty"`
-	CpuPercent float64 `json:"cpu_percent,omitempty"`
-	MemTotal   uint64  `json:"mem_total,omitempty"`
-	MemUsed    uint64  `json:"mem_used,omitempty"`
-	DiskTotal  uint64  `json:"disk_total,omitempty"`
-	DiskUsed   uint64  `json:"disk_used,omitempty"`
+	HostName   string   `json:"hostname,omitempty"`
+	OS         string   `json:"os,omitempty"`
+	CpuNum     int      `json:"cpu_num,omitempty"`
+	CpuPercent float64  `json:"cpu_percent,omitempty"`
+	MemTotal   uint64   `json:"mem_total,omitempty"`
+	MemUsed    uint64   `json:"mem_used,omitempty"`
+	DiskTotal  uint64   `json:"disk_total,omitempty"`
+	DiskUsed   uint64   `json:"disk_used,omitempty"`
+	Ips        []string `json:"ips,omitempty"`
 }
 
 func getsysinfo() string {
@@ -71,6 +73,7 @@ func getsysinfo() string {
 
 	}
 
+	sysinfo.Ips = addr.IPs()
 	info, _ := json.Marshal(sysinfo)
 	return string(info)
 }
