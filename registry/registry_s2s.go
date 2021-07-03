@@ -255,45 +255,7 @@ func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*regis
 
 func (s *proxy) ListServices(opts ...registry.ListOption) ([]*registry.Service, error) {
 	var gerr error
-	for _, addr := range s.opts.Addrs {
-		scheme := "http"
-		if s.opts.Secure {
-			scheme = "https"
-		}
-		url := fmt.Sprintf("%s://%s/registry", scheme, addr)
-		rsp, err := http.Get(url)
-		if err != nil {
-			gerr = err
-			continue
-		}
-
-		if rsp.StatusCode != 200 {
-			b, err := ioutil.ReadAll(rsp.Body)
-			if err != nil {
-				return nil, err
-			}
-			rsp.Body.Close()
-			gerr = errors.New(string(b))
-			continue
-		}
-
-		b, err := ioutil.ReadAll(rsp.Body)
-		if err != nil {
-			gerr = err
-			continue
-		}
-		rsp.Body.Close()
-		var services []*registry.Service
-		if err := json.Unmarshal(b, &services); err != nil {
-			gerr = err
-			continue
-		}
-
-		data, _ := json.Marshal(services)
-		logger.Info("ListServices ", string(data))
-
-		return services, nil
-	}
+	
 	return nil, gerr
 }
 
