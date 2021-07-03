@@ -2,7 +2,7 @@ package registry
 
 import (
 	"errors"
-	"net/http"
+//	"net/http"
 	"time"
 
 	log "github.com/asim/go-micro/v3/logger"
@@ -103,7 +103,7 @@ func newWatcher(url string) (registry.Watcher, error) {
 //		return nil, err
 //	}
 	w := &watcher{
-		conn: conn,
+//		conn: conn,
 		exit: make(chan bool),
 		res:  make(chan *registry.Result),
 	}
