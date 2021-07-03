@@ -208,6 +208,9 @@ func (s *proxy) Deregister(service *registry.Service, opts ...registry.Deregiste
 }
 
 func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*registry.Service, error) {
+	if 0 == len(service) {
+		logger.Info("service", service)
+	}
 	var gerr error
 	for _, addr := range s.opts.Addrs {
 		scheme := "http"
@@ -260,33 +263,8 @@ func (s *proxy) ListServices(opts ...registry.ListOption) ([]*registry.Service, 
 }
 
 func (s *proxy) Watch(opts ...registry.WatchOption) (registry.Watcher, error) {
-	var wo registry.WatchOptions
-	for _, o := range opts {
-		o(&wo)
-	}
-
-	watch := func(addr string) (registry.Watcher, error) {
-		scheme := "ws"
-		if s.opts.Secure {
-			scheme = "wss"
-		}
-		url := fmt.Sprintf("%s://%s/registry", scheme, addr)
-		// service filter
-		if len(wo.Service) > 0 {
-			url = url + "?service=" + wo.Service
-		}
-		return newWatcher(url)
-	}
-
+	logger.Info("Watch--------")
 	var gerr error
-	for _, addr := range s.opts.Addrs {
-		w, err := watch(addr)
-		if err != nil {
-			gerr = err
-			continue
-		}
-		return w, nil
-	}
 	return nil, gerr
 }
 
