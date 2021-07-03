@@ -255,7 +255,7 @@ func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*regis
 
 func (s *proxy) ListServices(opts ...registry.ListOption) ([]*registry.Service, error) {
 	var gerr error
-	
+	logger.Info("ListServices")
 	return nil, gerr
 }
 
