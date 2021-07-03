@@ -264,7 +264,7 @@ func (s *proxy) ListServices(opts ...registry.ListOption) ([]*registry.Service, 
 
 func (s *proxy) Watch(opts ...registry.WatchOption) (registry.Watcher, error) {
 	logger.Info("Watch--------")
-	return newWatcher(url)
+	return newWatcher("")
 }
 
 func (s *proxy) String() string {
