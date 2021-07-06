@@ -19,7 +19,6 @@ import (
 	"github.com/asim/go-micro/v3/logger"
 	"github.com/asim/go-micro/v3/registry"
 	"github.com/asim/go-micro/v3/util/addr"
-	"github.com/micro/go-micro/v2/registry"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
@@ -341,7 +340,7 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 // @return {[]Service}
 //
 func (s *proxy) getServices(services string) (map[string][]*registry.Service, error) {
-	if 0 == len(service) {
+	if 0 == len(services) {
 		return nil, errors.New("Service name is nil")
 	}
 
@@ -352,7 +351,7 @@ func (s *proxy) getServices(services string) (map[string][]*registry.Service, er
 			scheme = "https"
 		}
 
-		url := fmt.Sprintf("%s://%s/registry/%s", scheme, addr, url.QueryEscape(service))
+		url := fmt.Sprintf("%s://%s/registry/%s", scheme, addr, url.QueryEscape(services))
 		rsp, err := http.Get(url)
 		if err != nil {
 			gerr = err

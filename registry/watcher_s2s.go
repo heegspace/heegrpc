@@ -2,7 +2,7 @@ package registry
 
 import (
 	"errors"
-//	"net/http"
+	//	"net/http"
 	"time"
 
 	log "github.com/asim/go-micro/v3/logger"
@@ -98,16 +98,16 @@ func (w *watcher) Stop() {
 }
 
 func newWatcher(url string) (registry.Watcher, error) {
-//	conn, _, err := websocket.DefaultDialer.Dial(url, make(http.Header))
-//	if err != nil {
-//		return nil, err
-//	}
+	//	conn, _, err := websocket.DefaultDialer.Dial(url, make(http.Header))
+	//	if err != nil {
+	//		return nil, err
+	//	}
 	w := &watcher{
-//		conn: conn,
+		//		conn: conn,
 		exit: make(chan bool),
 		res:  make(chan *registry.Result),
 	}
-//	go w.ping()
-//	go w.run()
+	//	go w.ping()
+	//	go w.run()
 	return w, nil
 }
