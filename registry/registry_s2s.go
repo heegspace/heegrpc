@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/asim/go-micro/v3/logger"
 	"github.com/asim/go-micro/v3/registry"
 	"github.com/asim/go-micro/v3/util/addr"
+	"github.com/micro/go-micro/v2/registry"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
@@ -333,6 +335,59 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 	return nil, gerr
 }
 
+// 根据服务名批量获取服务列表
+//
+// @param services 	服务名
+// @return {[]Service}
+//
+func (s *proxy) getServices(services string) (map[string][]*registry.Service, error) {
+	if 0 == len(service) {
+		return nil, errors.New("Service name is nil")
+	}
+
+	var gerr error
+	for _, addr := range s.opts.Addrs {
+		scheme := "http"
+		if s.opts.Secure {
+			scheme = "https"
+		}
+
+		url := fmt.Sprintf("%s://%s/registry/%s", scheme, addr, url.QueryEscape(service))
+		rsp, err := http.Get(url)
+		if err != nil {
+			gerr = err
+			continue
+		}
+
+		if rsp.StatusCode != 200 {
+			b, err := ioutil.ReadAll(rsp.Body)
+			if err != nil {
+				return nil, err
+			}
+			rsp.Body.Close()
+			gerr = errors.New(string(b))
+			continue
+		}
+
+		b, err := ioutil.ReadAll(rsp.Body)
+		if err != nil {
+			gerr = err
+			continue
+		}
+		rsp.Body.Close()
+		var services map[string][]*registry.Service
+		services = make(map[string][]*registry.Service)
+		if err := json.Unmarshal(b, &services); err != nil {
+			gerr = err
+			continue
+		}
+
+		return services, nil
+	}
+
+	return nil, gerr
+}
+
 func (s *proxy) Watch(opts ...registry.WatchOption) (registry.Watcher, error) {
 	var wo registry.WatchOptions
 	for _, o := range opts {
@@ -359,20 +414,20 @@ func (s *proxy) refresh() {
 	for {
 		select {
 		case <-ticker.C:
-			for _, s2s_n := range watchNode {
-				svrs, err := s.getService(s2s_n)
-				if nil != err {
-					logger.Error("Refresh getService err ", err)
+			names := strings.Join(watchNode, ",")
+			svrs, err := s.getServices(names)
+			if nil != err {
+				logger.Error("Refresh getService err ", err)
 
-					continue
-				}
-
-				if 0 == len(svrs) {
+				continue
+			}
+			for k, v := range svrs {
+				if 0 == len(v) {
 					continue
 				}
 
 				s.rwlock.Lock()
-				s.svrs[s2s_n] = svrs
+				s.svrs[k] = v
 				s.rwlock.Unlock()
 			}
 		}
