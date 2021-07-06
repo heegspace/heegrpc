@@ -10,6 +10,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"reflect"
+	"sync"
 	"time"
 
 	"github.com/asim/go-micro/v3/cmd"
@@ -80,10 +82,40 @@ func getsysinfo() string {
 
 type proxy struct {
 	opts registry.Options
+
+	rwlock sync.RWMutex
+	svrs   map[string][]*registry.Service
 }
 
+var watchNode []string
+
 func init() {
+	watchNode = make([]string, 0)
 	cmd.DefaultRegistries["proxy"] = NewRegistry
+}
+
+// 设置要监听的节点连接信息
+//
+// @param obj 	配置中的nodes项
+//
+func SetWatchNode(obj interface{}) {
+	if nil == obj {
+		return
+	}
+
+	hofvalue := reflect.ValueOf(obj)
+	for i := 0; i < hofvalue.NumField(); i++ {
+		if nil == hofvalue.Field(i).Interface() {
+			continue
+		}
+
+		node := hofvalue.Field(i).Interface().(string)
+		watchNode = append(watchNode, node)
+
+		logger.Info("WatchNode name is ", node)
+	}
+
+	return
 }
 
 func configure(s *proxy, opts ...registry.Option) error {
@@ -105,8 +137,13 @@ func configure(s *proxy, opts ...registry.Option) error {
 
 func newRegistry(opts ...registry.Option) registry.Registry {
 	s := &proxy{
-		opts: registry.Options{},
+		opts:   registry.Options{},
+		rwlock: sync.RWMutex{},
+		svrs:   make(map[string][]*registry.Service),
 	}
+
+	go s.refresh()
+
 	configure(s, opts...)
 	return s
 }
@@ -207,10 +244,53 @@ func (s *proxy) Deregister(service *registry.Service, opts ...registry.Deregiste
 	return gerr
 }
 
+// 优先读取内存中的服务信息
+//
+// @param service 	服务名
+// @return {[]Service,error}
+//
 func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*registry.Service, error) {
 	if 0 == len(service) {
 		logger.Info("service", service)
+
+		return nil, errors.New("Service name is nil")
 	}
+
+	s.rwlock.RLock()
+	defer s.rwlock.RUnlock()
+
+	if _, ok := s.svrs[service]; ok {
+		item := make([]*registry.Service, 0)
+		for _, v := range s.svrs[service] {
+			var svr registry.Service
+
+			svr = *v
+			item = append(item, &svr)
+		}
+
+		return item, nil
+	}
+
+	return s.getService(service)
+}
+
+func (s *proxy) ListServices(opts ...registry.ListOption) ([]*registry.Service, error) {
+	var gerr error
+	logger.Info("ListServices")
+
+	return nil, gerr
+}
+
+// 根据服务名获取服务列表
+//
+// @param service 	服务名
+// @return {[]Service}
+//
+func (s *proxy) getService(service string) ([]*registry.Service, error) {
+	if 0 == len(service) {
+		return nil, errors.New("Service name is nil")
+	}
+
 	var gerr error
 	for _, addr := range s.opts.Addrs {
 		scheme := "http"
@@ -247,23 +327,13 @@ func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*regis
 			continue
 		}
 
-		data, _ := json.Marshal(services)
-		logger.Info("GetService ", service, string(data))
-
 		return services, nil
 	}
 
 	return nil, gerr
 }
 
-func (s *proxy) ListServices(opts ...registry.ListOption) ([]*registry.Service, error) {
-	var gerr error
-	logger.Info("ListServices")
-	return nil, gerr
-}
-
 func (s *proxy) Watch(opts ...registry.WatchOption) (registry.Watcher, error) {
-	logger.Info("Watch--------")
 	var wo registry.WatchOptions
 	for _, o := range opts {
 		o(&wo)
@@ -275,6 +345,38 @@ func (s *proxy) Watch(opts ...registry.WatchOption) (registry.Watcher, error) {
 
 func (s *proxy) String() string {
 	return "proxy"
+}
+
+// 刷新订阅的s2s信息
+//
+func (s *proxy) refresh() {
+	if 0 == len(watchNode) {
+		return
+	}
+
+	// 10s定时刷新订阅的服务信息
+	ticker := time.NewTicker(time.Second * 10)
+	for {
+		select {
+		case <-ticker.C:
+			for _, s2s_n := range watchNode {
+				svrs, err := s.getService(s2s_n)
+				if nil != err {
+					logger.Error("Refresh getService err ", err)
+
+					continue
+				}
+
+				if 0 == len(svrs) {
+					continue
+				}
+
+				s.rwlock.Lock()
+				s.svrs[s2s_n] = svrs
+				s.rwlock.Unlock()
+			}
+		}
+	}
 }
 
 func NewRegistry(opts ...registry.Option) registry.Registry {
