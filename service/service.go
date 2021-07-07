@@ -71,11 +71,11 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 		hofvalue := reflect.ValueOf(rsp)
 		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Rescode").IsZero() {
 			res.rescode = hofvalue.Elem().FieldByName("Rescode").Interface()
-			frew.Rescode = res.rescode.(int32)
+			freq.Rescode = res.rescode.(int32)
 		}
 		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Resmsg").IsZero() {
 			res.resmsg = hofvalue.Elem().FieldByName("Resmsg").Interface()
-			frew.Resmsg = res.resmsg.(string)
+			freq.Resmsg = res.resmsg.(string)
 		}
 		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Extra").IsZero() {
 			res.extra = hofvalue.Elem().FieldByName("Extra").Interface()
@@ -99,8 +99,6 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 		freq := &foot.RPCFootReq{
 			Svrname: req.Service(),
 			Method:  req.Method(),
-			Rescode: res.rescode.(int32),
-			Resmsg:  res.resmsg.(string),
 			Remote:  md["Remote"],
 			Localip: md["Local"],
 			Timeout: int64(time.Since(t)),
@@ -114,11 +112,11 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 		hofvalue := reflect.ValueOf(rsp)
 		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Rescode").IsZero() {
 			res.rescode = hofvalue.Elem().FieldByName("Rescode").Interface()
-			frew.Rescode = res.rescode.(int32)
+			freq.Rescode = res.rescode.(int32)
 		}
 		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Resmsg").IsZero() {
 			res.resmsg = hofvalue.Elem().FieldByName("Resmsg").Interface()
-			frew.Resmsg = res.resmsg.(string)
+			freq.Resmsg = res.resmsg.(string)
 		}
 		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Extra").IsZero() {
 			res.extra = hofvalue.Elem().FieldByName("Extra").Interface()
