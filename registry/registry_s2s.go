@@ -417,6 +417,7 @@ func (s *proxy) refresh() {
 		return
 	}
 
+	logger.Info("refresh ------------------ ")
 	// 10s定时刷新订阅的服务信息
 	ticker := time.NewTicker(time.Second * 3)
 	for {
