@@ -285,6 +285,7 @@ func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*regis
 		return item, nil
 	}
 
+	logger.Info(service, " node cache not exists.")
 	return s.getService(service)
 }
 
@@ -421,7 +422,6 @@ func (s *proxy) refresh() {
 		return
 	}
 
-	logger.Info("refresh ------------------ ")
 	// 10s定时刷新订阅的服务信息
 	ticker := time.NewTicker(time.Second * 3)
 	for {
