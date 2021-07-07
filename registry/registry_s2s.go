@@ -164,6 +164,10 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 		return err
 	}
 
+	if GetDeregister().IsDe() {
+		return nil
+	}
+
 	if nil == service.Metadata {
 		service.Metadata = make(map[string]string)
 	}
@@ -197,8 +201,11 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 		}
 		io.Copy(ioutil.Discard, rsp.Body)
 		rsp.Body.Close()
+
+		GetDeregister().LocalSvr = service
 		return nil
 	}
+
 	return gerr
 }
 
@@ -240,6 +247,8 @@ func (s *proxy) Deregister(service *registry.Service, opts ...registry.Deregiste
 
 		io.Copy(ioutil.Discard, rsp.Body)
 		rsp.Body.Close()
+		GetDeregister().De()
+
 		return nil
 	}
 	return gerr
@@ -280,6 +289,20 @@ func (s *proxy) ListServices(opts ...registry.ListOption) ([]*registry.Service, 
 	logger.Info("ListServices")
 
 	return nil, gerr
+}
+
+func (s *proxy) Watch(opts ...registry.WatchOption) (registry.Watcher, error) {
+	var wo registry.WatchOptions
+	for _, o := range opts {
+		o(&wo)
+	}
+	logger.Info("Watch, Service: ", wo.Service)
+
+	return newWatcher("")
+}
+
+func (s *proxy) String() string {
+	return "proxy"
 }
 
 // 根据服务名获取服务列表
@@ -387,20 +410,6 @@ func (s *proxy) getServices(services string) (map[string][]*registry.Service, er
 	return nil, gerr
 }
 
-func (s *proxy) Watch(opts ...registry.WatchOption) (registry.Watcher, error) {
-	var wo registry.WatchOptions
-	for _, o := range opts {
-		o(&wo)
-	}
-	logger.Info("Watch, Service: ", wo.Service)
-
-	return newWatcher("")
-}
-
-func (s *proxy) String() string {
-	return "proxy"
-}
-
 // 刷新订阅的s2s信息
 //
 func (s *proxy) refresh() {
@@ -409,7 +418,7 @@ func (s *proxy) refresh() {
 	}
 
 	// 10s定时刷新订阅的服务信息
-	ticker := time.NewTicker(time.Second * 10)
+	ticker := time.NewTicker(time.Second * 3)
 	for {
 		select {
 		case <-ticker.C:

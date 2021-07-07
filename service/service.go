@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"reflect"
 	"time"
 
 	hystrixsrc "github.com/afex/hystrix-go/hystrix"
@@ -35,12 +37,23 @@ func errstr(err error) string {
 	return err.Error()
 }
 
+type response struct {
+	rescode interface{}
+	resmsg  interface{}
+	extra   interface{}
+}
+
+func (obj response) String() string {
+	str := fmt.Sprintf("{rescode: %v, resmsg: %v, extra: %v}", obj.rescode, obj.resmsg, obj.extra)
+
+	return str
+}
+
 // 客户端调用追踪
 func metricsWrap(cf client.CallFunc) client.CallFunc {
 	return func(ctx context.Context, node *registry.Node, req client.Request, rsp interface{}, opts client.CallOptions) error {
 		t := time.Now()
 		err := cf(ctx, node, req, rsp, opts)
-
 		md, _ := metadata.FromContext(ctx)
 		freq := &foot.RPCFootReq{
 			Svrname: req.Service(),
@@ -54,11 +67,24 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 			},
 		}
 
+		var res response
+		hofvalue := reflect.ValueOf(rsp)
+		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Rescode").IsZero() {
+			res.rescode = hofvalue.Elem().FieldByName("Rescode").Interface()
+			frew.Rescode = res.rescode.(int32)
+		}
+		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Resmsg").IsZero() {
+			res.resmsg = hofvalue.Elem().FieldByName("Resmsg").Interface()
+			frew.Resmsg = res.resmsg.(string)
+		}
+		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Extra").IsZero() {
+			res.extra = hofvalue.Elem().FieldByName("Extra").Interface()
+		}
+
 		// 上报数据到统计服务
 		var fres foot.RPCFootRes
 		ferr := HttpRequest(config.Get("statis", "svrname").String("footnode"), config.Get("static", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
-
-		logger.Infof("[Metrics Wrapper]Node: %v, Service: %v,  Endpoint: %s, err: %v, ferr: %v, duration: %v\n", node, req.Service(), req.Endpoint(), err, ferr, time.Since(t))
+		logger.Infof("[Metrics Wrapper]-%v, Req: %v, Res: %s ,err: %v, footerr: %v, duration: %v\n", node, req.Body(), res, err, ferr, time.Since(t))
 		return err
 	}
 }
@@ -73,6 +99,8 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 		freq := &foot.RPCFootReq{
 			Svrname: req.Service(),
 			Method:  req.Method(),
+			Rescode: res.rescode.(int32),
+			Resmsg:  res.resmsg.(string),
 			Remote:  md["Remote"],
 			Localip: md["Local"],
 			Timeout: int64(time.Since(t)),
@@ -82,11 +110,24 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 			},
 		}
 
+		var res response
+		hofvalue := reflect.ValueOf(rsp)
+		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Rescode").IsZero() {
+			res.rescode = hofvalue.Elem().FieldByName("Rescode").Interface()
+			frew.Rescode = res.rescode.(int32)
+		}
+		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Resmsg").IsZero() {
+			res.resmsg = hofvalue.Elem().FieldByName("Resmsg").Interface()
+			frew.Resmsg = res.resmsg.(string)
+		}
+		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Extra").IsZero() {
+			res.extra = hofvalue.Elem().FieldByName("Extra").Interface()
+		}
+
 		// 上报数据到统计服务
 		var fres foot.RPCFootRes
 		ferr := HttpRequest(config.Get("statis", "svrname").String("footnode"), config.Get("static", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
-
-		logger.Infof("[Log Wrapper] Endpoint: %s,  method: %s, from: %s, ip: %s, errinfo: %v, ferrinfo: %v", req.Endpoint(), req.Method(), md["Remote"], md["Local"], err, ferr)
+		logger.Infof("[Log Wrapper]-%v, Req: %v, Res: %s, from: %v, ip: %v, errinfo: %v, ferrinfo: %v\n", req.Method(), req.Body(), res, md["Remote"], md["Local"], err, ferr)
 		return err
 	}
 }
@@ -130,6 +171,22 @@ func NewService() micro.Service {
 		micro.WrapCall(metricsWrap),
 		// 服务端被调跟踪，每个请求被处理之前都会调用这个中间件函数
 		micro.WrapHandler(logWrapper),
+		micro.BeforeStop(func() error {
+			if nil == s2s.GetDeregister().LocalSvr {
+				return nil
+			}
+
+			regis.Deregister(s2s.GetDeregister().LocalSvr)
+
+			// 等待3秒结束
+			logger.Info("Waitting 3 seconed over!")
+			for i := 0; i < 3; i++ {
+				logger.Info("Waitting 3 seconed over! ........ ", 3-i)
+				time.Sleep(1 * time.Second)
+			}
+
+			return nil
+		}),
 	)
 
 	svr.Init()
@@ -160,6 +217,21 @@ func HttpService(router *gin.Engine) micro.Service {
 	svrice := micro.NewService(
 		micro.Server(srv),
 		micro.Registry(regis),
+		micro.BeforeStop(func() error {
+			if nil == s2s.GetDeregister().LocalSvr {
+				return nil
+			}
+
+			// 等待3秒结束
+			regis.Deregister(s2s.GetDeregister().LocalSvr)
+			logger.Info("Waitting 3 seconed over!")
+			for i := 0; i < 3; i++ {
+				logger.Info("Waitting 3 seconed over! ........ ", 3-i)
+				time.Sleep(1 * time.Second)
+			}
+
+			return nil
+		}),
 	)
 
 	svrice.Init()
