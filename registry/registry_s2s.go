@@ -146,8 +146,8 @@ func newRegistry(opts ...registry.Option) registry.Registry {
 			svrs:   make(map[string][]*registry.Service),
 		}
 
-		go s.refresh()
-		configure(s, opts...)
+		go gs.refresh()
+		configure(gs, opts...)
 	}
 
 	return gs
