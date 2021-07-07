@@ -5,12 +5,10 @@ option go_package="./callfoot";
 message RPCFootReq {
     string              svrname = 1;
     string              method = 2;
-    int32               rescode = 3;
-    string              resmsg = 4;
-    string              remote = 5;
-    string              localip = 6;
-    int64               timeout = 7;
-    map<string,string>  extra = 8;
+    string              remote = 3;
+    string              localip = 4;
+    int64               timeout = 5;
+    map<string,string>  extra = 6;
 }
 
 message RPCFootRes {
@@ -21,12 +19,10 @@ message RPCFootRes {
 
 message HTTPFootReq {
     string              url = 1;
-    int32               status = 2;
-    string              msg = 3;
-    string              remote = 4;
-    string              localip = 5;
-    int64               timeout = 6;
-    map<string,string>  extra = 7;
+    string              remote = 2;
+    string              localip = 3;
+    int64               timeout = 4;
+    map<string,string>  extra = 5;
 }
 
 message HTTPFootRes {
