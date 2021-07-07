@@ -136,17 +136,21 @@ func configure(s *proxy, opts ...registry.Option) error {
 	return nil
 }
 
+var gs *proxy
+
 func newRegistry(opts ...registry.Option) registry.Registry {
-	s := &proxy{
-		opts:   registry.Options{},
-		rwlock: sync.RWMutex{},
-		svrs:   make(map[string][]*registry.Service),
+	if nil == gs {
+		gs = &proxy{
+			opts:   registry.Options{},
+			rwlock: sync.RWMutex{},
+			svrs:   make(map[string][]*registry.Service),
+		}
+
+		go s.refresh()
+		configure(s, opts...)
 	}
 
-	go s.refresh()
-
-	configure(s, opts...)
-	return s
+	return gs
 }
 
 func (s *proxy) Init(opts ...registry.Option) error {
