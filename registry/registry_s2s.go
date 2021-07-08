@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -97,23 +96,15 @@ func init() {
 
 // 设置要监听的节点连接信息
 //
-// @param obj 	配置中的nodes项
+// @param nodes 配置中的nodes项
 //
-func SetWatchNode(obj interface{}) {
-	if nil == obj {
+func SetWatchNode(nodes []string) {
+	if 0 == len(nodes) {
 		return
 	}
 
-	hofvalue := reflect.ValueOf(obj)
-	for i := 0; i < hofvalue.NumField(); i++ {
-		if nil == hofvalue.Field(i).Interface() {
-			continue
-		}
-
-		node := hofvalue.Field(i).Interface().(string)
-		watchNode = append(watchNode, node)
-
-		logger.Info("WatchNode name is ", node)
+	for _, v := range nodes {
+		watchNode = append(watchNode, v)
 	}
 
 	return

@@ -7,6 +7,7 @@ import (
 
 	goyaml "gopkg.in/yaml.v2"
 
+	s2s "github.com/heegspace/heegrpc/registry"
 	"github.com/micro/go-micro/v2/config"
 	"github.com/micro/go-micro/v2/config/encoder/yaml"
 	"github.com/micro/go-micro/v2/config/source"
@@ -56,5 +57,26 @@ func LoadConf(conffile string, conf interface{}) (err error) {
 	if nil != err {
 		return
 	}
+
+	// 获取服务中使用的nodes列表
+	// 主要用于定时获取s2s信息
+	mp := config.Map()
+	watchnodes := make([]string, 0)
+	if _, ok := mp["nodes"]; ok {
+		switch mp["nodes"].(type) {
+		case map[string]interface{}:
+			nodes := mp["nodes"].(map[string]interface{})
+			for _, v := range nodes {
+				watchnodes = append(watchnodes, v.(string))
+			}
+
+			break
+
+		default:
+			break
+		}
+	}
+
+	s2s.SetWatchNode(watchnodes)
 	return
 }
