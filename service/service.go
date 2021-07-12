@@ -68,16 +68,21 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 		}
 
 		var res response
-		if nil == err && nil != rsp {
-			hofvalue := reflect.ValueOf(rsp)
-			if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Rescode").IsZero() {
-				res.rescode = hofvalue.Elem().FieldByName("Rescode").Interface()
+		obj := reflect.ValueOf(rsp)
+		elem := obj.Elem()
+		if elem.Kind() == reflect.Struct {
+			rescode := elem.FieldByName("Rescode")
+			if rescode.Kind() == reflect.Int || rescode.Kind() == reflect.Interface {
+				res.rescode = rescode.Interface()
 			}
-			if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Resmsg").IsZero() {
-				res.resmsg = hofvalue.Elem().FieldByName("Resmsg").Interface()
+			resmsg := elem.FieldByName("Resmsg")
+			if resmsg.Kind() == reflect.String || resmsg.Kind() == reflect.Interface {
+				res.resmsg = resmsg.Interface()
 			}
-			if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Extra").IsZero() {
-				res.extra = hofvalue.Elem().FieldByName("Extra").Interface()
+
+			extra := elem.FieldByName("Extra")
+			if resmsg.Kind() == reflect.String || resmsg.Kind() == reflect.Interface {
+				res.extra = extra.Interface()
 			}
 		}
 
@@ -109,16 +114,21 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 		}
 
 		var res response
-		if nil == err && nil != rsp {
-			hofvalue := reflect.ValueOf(rsp)
-			if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Rescode").IsZero() {
-				res.rescode = hofvalue.Elem().FieldByName("Rescode").Interface()
+		obj := reflect.ValueOf(rsp)
+		elem := obj.Elem()
+		if elem.Kind() == reflect.Struct {
+			rescode := elem.FieldByName("Rescode")
+			if rescode.Kind() == reflect.Int || rescode.Kind() == reflect.Interface {
+				res.rescode = rescode.Interface()
 			}
-			if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Resmsg").IsZero() {
-				res.resmsg = hofvalue.Elem().FieldByName("Resmsg").Interface()
+			resmsg := elem.FieldByName("Resmsg")
+			if resmsg.Kind() == reflect.String || resmsg.Kind() == reflect.Interface {
+				res.resmsg = resmsg.Interface()
 			}
-			if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Extra").IsZero() {
-				res.extra = hofvalue.Elem().FieldByName("Extra").Interface()
+
+			extra := elem.FieldByName("Extra")
+			if resmsg.Kind() == reflect.String || resmsg.Kind() == reflect.Interface {
+				res.extra = extra.Interface()
 			}
 		}
 
