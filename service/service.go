@@ -68,15 +68,17 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 		}
 
 		var res response
-		hofvalue := reflect.ValueOf(rsp)
-		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Rescode").IsZero() {
-			res.rescode = hofvalue.Elem().FieldByName("Rescode").Interface()
-		}
-		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Resmsg").IsZero() {
-			res.resmsg = hofvalue.Elem().FieldByName("Resmsg").Interface()
-		}
-		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Extra").IsZero() {
-			res.extra = hofvalue.Elem().FieldByName("Extra").Interface()
+		if nil == err && nil != rsp {
+			hofvalue := reflect.ValueOf(rsp)
+			if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Rescode").IsZero() {
+				res.rescode = hofvalue.Elem().FieldByName("Rescode").Interface()
+			}
+			if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Resmsg").IsZero() {
+				res.resmsg = hofvalue.Elem().FieldByName("Resmsg").Interface()
+			}
+			if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Extra").IsZero() {
+				res.extra = hofvalue.Elem().FieldByName("Extra").Interface()
+			}
 		}
 
 		// 上报数据到统计服务
@@ -107,15 +109,17 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 		}
 
 		var res response
-		hofvalue := reflect.ValueOf(rsp)
-		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Rescode").IsZero() {
-			res.rescode = hofvalue.Elem().FieldByName("Rescode").Interface()
-		}
-		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Resmsg").IsZero() {
-			res.resmsg = hofvalue.Elem().FieldByName("Resmsg").Interface()
-		}
-		if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Extra").IsZero() {
-			res.extra = hofvalue.Elem().FieldByName("Extra").Interface()
+		if nil == err && nil != rsp {
+			hofvalue := reflect.ValueOf(rsp)
+			if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Rescode").IsZero() {
+				res.rescode = hofvalue.Elem().FieldByName("Rescode").Interface()
+			}
+			if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Resmsg").IsZero() {
+				res.resmsg = hofvalue.Elem().FieldByName("Resmsg").Interface()
+			}
+			if !hofvalue.IsZero() && !hofvalue.Elem().FieldByName("Extra").IsZero() {
+				res.extra = hofvalue.Elem().FieldByName("Extra").Interface()
+			}
 		}
 
 		// 上报数据到统计服务
