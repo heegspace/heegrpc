@@ -81,7 +81,7 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 			}
 
 			extra := elem.FieldByName("Extra")
-			if resmsg.Kind() == reflect.String || resmsg.Kind() == reflect.Interface {
+			if extra.Kind() == reflect.Interface {
 				res.extra = extra.Interface()
 			}
 		}
@@ -127,7 +127,7 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 			}
 
 			extra := elem.FieldByName("Extra")
-			if resmsg.Kind() == reflect.String || resmsg.Kind() == reflect.Interface {
+			if extra.Kind() == reflect.Interface {
 				res.extra = extra.Interface()
 			}
 		}
