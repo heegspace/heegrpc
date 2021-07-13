@@ -14,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/asim/go-micro/v3/cmd"
 	"github.com/asim/go-micro/v3/logger"
 	"github.com/asim/go-micro/v3/registry"
@@ -84,7 +83,6 @@ func getsysinfo() string {
 type proxy struct {
 	opts registry.Options
 
-	id   string
 	rwlock sync.RWMutex
 	svrs   map[string][]*registry.Service
 }
@@ -136,7 +134,6 @@ func newRegistry(opts ...registry.Option) registry.Registry {
 		gs = &proxy{
 			opts:   registry.Options{},
 			rwlock: sync.RWMutex{},
-			id: uuid.New().String(),
 			svrs:   make(map[string][]*registry.Service),
 		}
 
@@ -373,7 +370,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 			scheme = "https"
 		}
 
-		url := fmt.Sprintf("%s://%s/registry/%s?id=" + s.id, scheme, addr, url.QueryEscape(s2sname))
+		url := fmt.Sprintf("%s://%s/registry/%s", scheme, addr, url.QueryEscape(s2sname))
 		rsp, err := http.Get(url)
 		if err != nil {
 			gerr = err
@@ -429,7 +426,7 @@ func (s *proxy) refresh() {
 	}
 
 	// 10s定时刷新订阅的服务信息
-	ticker := time.NewTicker(time.Second * 3)
+	ticker := time.NewTicker(time.Second * 10)
 	for {
 		select {
 		case <-ticker.C:
