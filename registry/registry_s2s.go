@@ -84,6 +84,7 @@ func getsysinfo() string {
 type proxy struct {
 	opts registry.Options
 
+	id   string
 	rwlock sync.RWMutex
 	svrs   map[string][]*registry.Service
 }
@@ -135,6 +136,7 @@ func newRegistry(opts ...registry.Option) registry.Registry {
 		gs = &proxy{
 			opts:   registry.Options{},
 			rwlock: sync.RWMutex{},
+			id: uuid.New().String(),
 			svrs:   make(map[string][]*registry.Service),
 		}
 
@@ -371,7 +373,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 			scheme = "https"
 		}
 
-		url := fmt.Sprintf("%s://%s/registry/%s?id=" + uuid.New().String(), scheme, addr, url.QueryEscape(s2sname))
+		url := fmt.Sprintf("%s://%s/registry/%s?id=" + s.id, scheme, addr, url.QueryEscape(s2sname))
 		rsp, err := http.Get(url)
 		if err != nil {
 			gerr = err
