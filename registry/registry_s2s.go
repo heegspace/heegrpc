@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/asim/go-micro/v3/cmd"
 	"github.com/asim/go-micro/v3/logger"
 	"github.com/asim/go-micro/v3/registry"
@@ -370,7 +371,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 			scheme = "https"
 		}
 
-		url := fmt.Sprintf("%s://%s/registry/%s", scheme, addr, url.QueryEscape(s2sname))
+		url := fmt.Sprintf("%s://%s/registry/%s?id=" + uuid.New().String(), scheme, addr, url.QueryEscape(s2sname))
 		rsp, err := http.Get(url)
 		if err != nil {
 			gerr = err
