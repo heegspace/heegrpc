@@ -395,9 +395,21 @@ func (s *proxy) getServices(services string) (map[string][]*registry.Service, er
 		rsp.Body.Close()
 		var services map[string][]*registry.Service
 		services = make(map[string][]*registry.Service)
-		if err := json.Unmarshal(b, &services); err != nil {
-			gerr = err
-			continue
+
+		svrs := strings.Split(services, ",")
+		if 1 == len(svrs) {
+			var services []*registry.Service
+			if err := json.Unmarshal(b, &services); err != nil {
+				gerr = err
+				continue
+			}
+
+			services[services] = services
+		} else {
+			if err := json.Unmarshal(b, &services); err != nil {
+				gerr = err
+				continue
+			}
 		}
 
 		return services, nil
