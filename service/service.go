@@ -70,7 +70,7 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 		var res response
 		obj := reflect.ValueOf(rsp)
 		elem := obj.Elem()
-		if elem.Kind() == reflect.Struct {
+		if nil == err && nil != rsp && elem.Kind() == reflect.Struct {
 			rescode := elem.FieldByName("Rescode")
 			if rescode.Kind() == reflect.Int || rescode.Kind() == reflect.Interface {
 				res.rescode = rescode.Interface()
@@ -116,7 +116,7 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 		var res response
 		obj := reflect.ValueOf(rsp)
 		elem := obj.Elem()
-		if elem.Kind() == reflect.Struct {
+		if nil == err && nil != rsp && elem.Kind() == reflect.Struct {
 			rescode := elem.FieldByName("Rescode")
 			if rescode.Kind() == reflect.Int || rescode.Kind() == reflect.Interface {
 				res.rescode = rescode.Interface()
