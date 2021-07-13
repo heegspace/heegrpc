@@ -355,11 +355,11 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 
 // 根据服务名批量获取服务列表
 //
-// @param services 	服务名
+// @param s2sname 	服务名
 // @return {[]Service}
 //
-func (s *proxy) getServices(services string) (map[string][]*registry.Service, error) {
-	if 0 == len(services) {
+func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, error) {
+	if 0 == len(s2sname) {
 		return nil, errors.New("Service name is nil")
 	}
 
@@ -370,7 +370,7 @@ func (s *proxy) getServices(services string) (map[string][]*registry.Service, er
 			scheme = "https"
 		}
 
-		url := fmt.Sprintf("%s://%s/registry/%s", scheme, addr, url.QueryEscape(services))
+		url := fmt.Sprintf("%s://%s/registry/%s", scheme, addr, url.QueryEscape(s2sname))
 		rsp, err := http.Get(url)
 		if err != nil {
 			gerr = err
@@ -396,15 +396,15 @@ func (s *proxy) getServices(services string) (map[string][]*registry.Service, er
 		var services map[string][]*registry.Service
 		services = make(map[string][]*registry.Service)
 
-		svrs := strings.Split(services, ",")
+		svrs := strings.Split(s2sname, ",")
 		if 1 == len(svrs) {
-			var services []*registry.Service
-			if err := json.Unmarshal(b, &services); err != nil {
+			var serv []*registry.Service
+			if err := json.Unmarshal(b, &serv); err != nil {
 				gerr = err
 				continue
 			}
 
-			services[services] = services
+			services[s2sname] = serv
 		} else {
 			if err := json.Unmarshal(b, &services); err != nil {
 				gerr = err
