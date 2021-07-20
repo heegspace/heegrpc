@@ -72,7 +72,7 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 		elem := obj.Elem()
 		if nil == err && nil != rsp && elem.Kind() == reflect.Struct {
 			rescode := elem.FieldByName("Rescode")
-			if rescode.Kind() == reflect.Int || rescode.Kind() == reflect.Interface {
+			if rescode.Kind() == reflect.Interface {
 				res.rescode = rescode.Interface()
 			}
 			resmsg := elem.FieldByName("Resmsg")
@@ -89,7 +89,7 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 		// 上报数据到统计服务
 		var fres foot.RPCFootRes
 		ferr := HttpRequest(config.Get("statis", "svrname").String("footnode"), config.Get("static", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
-		logger.Infof("[Metrics Wrapper]-%v, Req: %v, Res: %s ,err: %v, footerr: %v, duration: %v\n", node, req.Body(), res, err, ferr, time.Since(t))
+		logger.Infof("[Metrics Wrapper]-%v, Req: %v, Res: %s ,err: %v, footerr: %v, duration: %v\n", req.Method(), req.Body(), res, err, ferr, time.Since(t))
 		return err
 	}
 }
@@ -118,7 +118,7 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 		elem := obj.Elem()
 		if nil == err && nil != rsp && elem.Kind() == reflect.Struct {
 			rescode := elem.FieldByName("Rescode")
-			if rescode.Kind() == reflect.Int || rescode.Kind() == reflect.Interface {
+			if rescode.Kind() == reflect.Interface {
 				res.rescode = rescode.Interface()
 			}
 			resmsg := elem.FieldByName("Resmsg")
