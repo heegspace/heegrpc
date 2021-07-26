@@ -25,6 +25,7 @@ import (
 	grpc "github.com/asim/go-micro/plugins/transport/grpc/v3"
 	ratelimiter "github.com/asim/go-micro/plugins/wrapper/ratelimiter/ratelimit/v3"
 	registry "github.com/asim/go-micro/v3/registry"
+	"github.com/asim/go-micro/v3/selector"
 	foot "github.com/heegspace/heegrpc/callfoot"
 	s2s "github.com/heegspace/heegrpc/registry"
 )
@@ -138,6 +139,26 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 		logger.Infof("[Log Wrapper]-%v, Req: %v, Res: %s, from: %v, ip: %v, errinfo: %v, ferrinfo: %v\n", req.Method(), req.Body(), res, md["Remote"], md["Local"], err, ferr)
 		return err
 	}
+}
+
+// 获取客户端对象
+//
+func NewClient() client.Client {
+	regis := s2s.NewRegistry(
+		registry.Addrs(config.Get("s2s", "address").String("")),
+		registry.Secure(config.Get("s2s", "secure").Bool(false)),
+	)
+	se := selector.NewSelector(
+		selector.Registry(regis),
+	)
+
+	c := client.NewClient(
+		client.Registry(regis),
+		client.Selector(se),
+		client.WrapCall(metricsWrap),
+	)
+
+	return c
 }
 
 // 获取服务对象
