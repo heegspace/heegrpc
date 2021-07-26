@@ -25,7 +25,6 @@ import (
 	grpc "github.com/asim/go-micro/plugins/transport/grpc/v3"
 	ratelimiter "github.com/asim/go-micro/plugins/wrapper/ratelimiter/ratelimit/v3"
 	registry "github.com/asim/go-micro/v3/registry"
-	"github.com/asim/go-micro/v3/selector"
 	foot "github.com/heegspace/heegrpc/callfoot"
 	s2s "github.com/heegspace/heegrpc/registry"
 )
