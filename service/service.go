@@ -73,7 +73,7 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 		elem := obj.Elem()
 		if nil == err && nil != rsp && elem.Kind() == reflect.Struct {
 			rescode := elem.FieldByName("Rescode")
-			if rescode.Kind() == reflect.Int || rescode.Kind() == reflect.Interface {
+			if rescode.Kind() == reflect.Interface {
 				res.rescode = rescode.Interface()
 			}
 			resmsg := elem.FieldByName("Resmsg")
@@ -90,7 +90,7 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 		// 上报数据到统计服务
 		var fres foot.RPCFootRes
 		ferr := HttpRequest(config.Get("statis", "svrname").String("footnode"), config.Get("static", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
-		logger.Infof("[Metrics Wrapper]-%v, Req: %v, Res: %s ,err: %v, footerr: %v, duration: %v\n", node, req.Body(), res, err, ferr, time.Since(t))
+		logger.Infof("[Metrics Wrapper]-%v, Req: %v, Res: %s ,err: %v, footerr: %v, duration: %v\n", req.Method(), req.Body(), res, err, ferr, time.Since(t))
 		return err
 	}
 }
@@ -119,7 +119,7 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 		elem := obj.Elem()
 		if nil == err && nil != rsp && elem.Kind() == reflect.Struct {
 			rescode := elem.FieldByName("Rescode")
-			if rescode.Kind() == reflect.Int || rescode.Kind() == reflect.Interface {
+			if rescode.Kind() == reflect.Interface {
 				res.rescode = rescode.Interface()
 			}
 			resmsg := elem.FieldByName("Resmsg")
@@ -228,6 +228,12 @@ func NewService() micro.Service {
 // @return micro.Service
 //
 func HttpService(router *gin.Engine) micro.Service {
+	hystrixsrc.DefaultTimeout = config.Get("timeout").Int(3) * 1000
+
+	// Create a new service. Optionally include some options here.
+	// 设置限流，设置能同时处理的请求数，超过这个数就不继续处理
+	br := ratelimit.NewBucketWithRate(float64(config.Get("rate").Int(1000)), int64(config.Get("rate").Int(1000)+200))
+
 	srv := httpServer.NewServer(
 		server.Name(config.Get("name").String("")),
 		server.Version(config.Get("version").String("0.0.1")),
@@ -246,6 +252,25 @@ func HttpService(router *gin.Engine) micro.Service {
 	svrice := micro.NewService(
 		micro.Server(srv),
 		micro.Registry(regis),
+		// 客户端调用跟踪，每个请求调用之前都会调用这个中间件函数
+		micro.WrapCall(metricsWrap),
+		// 服务端被调跟踪，每个请求被处理之前都会调用这个中间件函数
+		micro.WrapHandler(logWrapper),
+		// 设置熔断,超过默认值就直接不发送请求
+		// 可以通过 github.com/afex/hystrix-go/hystrix设置默认值
+		// 超时时间和并发数
+		// 所有从此节点发出的Micro服务调用都会受到熔断插件的限制和保护。
+		// 熔断是调用级别的
+		// doc:https://medium.com/@dche423/micro-in-action-7-cn-ce75d5847ef4
+		// 熔断功能作用于客户端，设置恰当阈值以后， 它可以保障客户端资源不会被耗尽
+		// —— 哪怕是它所依赖的服务处于不健康的状态，也会快速返回错误，而不是让调用方长时间等待。
+		micro.WrapClient(hystrix.NewClientWrapper()),
+		// 用于限流限频
+		// 与熔断类似， 限流也是分布式系统中常用的功能。
+		// 不同的是， 限流在服务端生效，它的作用是保护服务器： 在请求处理速度达到设定的限制以后，
+		// 便不再接收和处理更多新请求，直到原有请求处理完成， 腾出空闲。 避免服务器因为客户端的疯狂调用而整体垮掉。
+		micro.WrapClient(ratelimiter.NewClientWrapper(br, false)),
+		micro.WrapHandler(ratelimiter.NewHandlerWrapper(br, false)),
 		micro.BeforeStop(func() error {
 			if nil == s2s.GetDeregister().LocalSvr {
 				return nil
