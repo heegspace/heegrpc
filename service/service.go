@@ -143,21 +143,8 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 // 获取客户端对象
 //
 func NewClient() client.Client {
-	regis := s2s.NewRegistry(
-		registry.Addrs(config.Get("s2s", "address").String("")),
-		registry.Secure(config.Get("s2s", "secure").Bool(false)),
-	)
-	se := selector.NewSelector(
-		selector.Registry(regis),
-	)
-
-	c := client.NewClient(
-		client.Registry(regis),
-		client.Selector(se),
-		client.WrapCall(metricsWrap),
-	)
-
-	return c
+	svr := NewService()
+	return svr.Client()
 }
 
 // 获取服务对象
@@ -218,7 +205,6 @@ func NewService() micro.Service {
 	)
 
 	svr.Init()
-
 	return svr
 }
 
