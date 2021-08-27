@@ -135,7 +135,7 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 		// 上报数据到统计服务
 		var fres foot.RPCFootRes
 		ferr := HttpRequest(config.Get("statis", "svrname").String("footnode"), config.Get("static", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
-		logger.Infof("[Log Wrapper]-%v, Req: %v, Res: %s, from: %v, ip: %v, errinfo: %v, ferrinfo: %v\n", req.Method(), req.Body(), res, md["Remote"], md["Local"], err, ferr)
+		logger.Infof("[Log Wrapper]-%v, Req: %v, Res: %s, from: %v, ip: %v, errinfo: %v, ferrinfo: %v, duration: %v\n", req.Method(), req.Body(), res, md["Remote"], md["Local"], err, ferr, time.Since(t))
 		return err
 	}
 }
