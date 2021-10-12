@@ -62,8 +62,9 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 			Localip: md["Local"],
 			Timeout: int64(time.Since(t)),
 			Extra: map[string]string{
-				"error": errstr(err),
-				"type":  "client",
+				"error":   errstr(err),
+				"type":    "client",
+				"rescode": "-99",
 			},
 		}
 
@@ -72,12 +73,14 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 		elem := obj.Elem()
 		if nil == err && nil != rsp && elem.Kind() == reflect.Struct {
 			rescode := elem.FieldByName("Rescode")
-			if rescode.Kind() == reflect.Interface {
-				res.rescode = rescode.Interface()
+			if rescode.Kind().String() == "int32" {
+				res.rescode = rescode.Int()
+				freq.Extra["rescode"] = fmt.Sprintf("%d", rescode.Int())
 			}
+
 			resmsg := elem.FieldByName("Resmsg")
-			if resmsg.Kind() == reflect.String || resmsg.Kind() == reflect.Interface {
-				res.resmsg = resmsg.Interface()
+			if resmsg.Kind().String() == "string" {
+				res.resmsg = resmsg.String()
 			}
 
 			extra := elem.FieldByName("Extra")
@@ -108,8 +111,9 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 			Localip: md["Local"],
 			Timeout: int64(time.Since(t)),
 			Extra: map[string]string{
-				"error": errstr(err),
-				"type":  "service",
+				"error":   errstr(err),
+				"type":    "service",
+				"rescode": "-99",
 			},
 		}
 
@@ -118,12 +122,13 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 		elem := obj.Elem()
 		if nil == err && nil != rsp && elem.Kind() == reflect.Struct {
 			rescode := elem.FieldByName("Rescode")
-			if rescode.Kind() == reflect.Interface {
-				res.rescode = rescode.Interface()
+			if rescode.Kind().String() == "int32" {
+				res.rescode = rescode.Int()
+				freq.Extra["rescode"] = fmt.Sprintf("%d", rescode.Int())
 			}
 			resmsg := elem.FieldByName("Resmsg")
-			if resmsg.Kind() == reflect.String || resmsg.Kind() == reflect.Interface {
-				res.resmsg = resmsg.Interface()
+			if resmsg.Kind().String() == "string" {
+				res.resmsg = resmsg.String()
 			}
 
 			extra := elem.FieldByName("Extra")
