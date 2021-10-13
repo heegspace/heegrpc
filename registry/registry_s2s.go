@@ -18,10 +18,10 @@ import (
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/mem"
-	"github.com/micro/go-micro/v4/cmd"
-	"github.com/micro/go-micro/v4/logger"
-	"github.com/micro/go-micro/v4/registry"
-	"github.com/micro/go-micro/v4/util/addr"
+	"github.com/micro/go-micro/v3/cmd"
+	"github.com/micro/go-micro/v3/logger"
+	"github.com/micro/go-micro/v3/registry"
+	"github.com/micro/go-micro/v3/util/addr"
 )
 
 type SysInfo struct {

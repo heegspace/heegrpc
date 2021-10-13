@@ -13,12 +13,12 @@ import (
 	"github.com/juju/ratelimit"
 	"github.com/micro/go-micro/v2/config"
 	"github.com/asim/go-micro/plugins/wrapper/breaker/hystrix/v3"
-	"github.com/micro/go-micro/v4"
-	"github.com/micro/go-micro/v4/client"
-	"github.com/micro/go-micro/v4/logger"
-	"github.com/micro/go-micro/v4/metadata"
-	"github.com/micro/go-micro/v4/selector"
-	"github.com/micro/go-micro/v4/server"
+	"github.com/micro/go-micro/v3"
+	"github.com/micro/go-micro/v3/client"
+	"github.com/micro/go-micro/v3/logger"
+	"github.com/micro/go-micro/v3/metadata"
+	"github.com/micro/go-micro/v3/selector"
+	"github.com/micro/go-micro/v3/server"
 
 	foot "github.com/heegspace/heegrpc/callfoot"
 	s2s "github.com/heegspace/heegrpc/registry"
@@ -26,7 +26,7 @@ import (
 	httpServer "github.com/asim/go-micro/plugins/server/http/v3"
 	grpc "github.com/asim/go-micro/plugins/transport/grpc/v3"
 	ratelimiter "github.com/asim/go-micro/plugins/wrapper/ratelimiter/ratelimit/v3"
-	registry "github.com/micro/go-micro/v4/registry"
+	registry "github.com/micro/go-micro/v3/registry"
 )
 
 func errstr(err error) string {
