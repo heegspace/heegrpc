@@ -3,7 +3,7 @@ package registry
 import (
 	"sync"
 
-	"go-micro.dev/v4/registry"
+	"github.com/micro/go-micro/v4/registry"
 )
 
 type Deregister struct {
