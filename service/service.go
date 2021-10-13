@@ -12,20 +12,20 @@ import (
 
 	"github.com/juju/ratelimit"
 	"github.com/micro/go-micro/v2/config"
-	"go-micro.dev/plugins/wrapper/breaker/hystrix/v4"
 	"go-micro.dev/v4"
 	"go-micro.dev/v4/client"
 	"go-micro.dev/v4/logger"
 	"go-micro.dev/v4/metadata"
+	"go-micro.dev/v4/plugins/wrapper/breaker/hystrix"
 	"go-micro.dev/v4/selector"
 	"go-micro.dev/v4/server"
 
 	foot "github.com/heegspace/heegrpc/callfoot"
 	s2s "github.com/heegspace/heegrpc/registry"
-	httpClient "go-micro.dev/plugins/client/http/v4"
-	httpServer "go-micro.dev/plugins/server/http/v4"
-	grpc "go-micro.dev/plugins/transport/grpc/v4"
-	ratelimiter "go-micro.dev/plugins/wrapper/ratelimiter/ratelimit/v4"
+	httpClient "go-micro.dev/v4/plugins/client/http"
+	httpServer "go-micro.dev/v4/plugins/server/http"
+	grpc "go-micro.dev/v4/plugins/transport/grpc"
+	ratelimiter "go-micro.dev/v4/plugins/wrapper/ratelimiter/ratelimit"
 	registry "go-micro.dev/v4/registry"
 )
 
