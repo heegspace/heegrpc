@@ -10,23 +10,23 @@ import (
 	hystrixsrc "github.com/afex/hystrix-go/hystrix"
 	"github.com/gin-gonic/gin"
 
+	"github.com/asim/go-micro/plugins/wrapper/breaker/hystrix/v3"
+	"github.com/asim/go-micro/v3"
+	"github.com/asim/go-micro/v3/client"
+	"github.com/asim/go-micro/v3/logger"
+	"github.com/asim/go-micro/v3/metadata"
+	"github.com/asim/go-micro/v3/selector"
+	"github.com/asim/go-micro/v3/server"
 	"github.com/juju/ratelimit"
 	"github.com/micro/go-micro/v2/config"
-	"github.com/asim/go-micro/plugins/wrapper/breaker/hystrix/v3"
-	"github.com/micro/go-micro/v3"
-	"github.com/micro/go-micro/v3/client"
-	"github.com/micro/go-micro/v3/logger"
-	"github.com/micro/go-micro/v3/metadata"
-	"github.com/micro/go-micro/v3/selector"
-	"github.com/micro/go-micro/v3/server"
 
-	foot "github.com/heegspace/heegrpc/callfoot"
-	s2s "github.com/heegspace/heegrpc/registry"
 	httpClient "github.com/asim/go-micro/plugins/client/http/v3"
 	httpServer "github.com/asim/go-micro/plugins/server/http/v3"
 	grpc "github.com/asim/go-micro/plugins/transport/grpc/v3"
 	ratelimiter "github.com/asim/go-micro/plugins/wrapper/ratelimiter/ratelimit/v3"
-	registry "github.com/micro/go-micro/v3/registry"
+	registry "github.com/asim/go-micro/v3/registry"
+	foot "github.com/heegspace/heegrpc/callfoot"
+	s2s "github.com/heegspace/heegrpc/registry"
 )
 
 func errstr(err error) string {
@@ -368,4 +368,3 @@ func HttpRequest(svrname, method string, request, response interface{}, contentT
 
 	return
 }
-

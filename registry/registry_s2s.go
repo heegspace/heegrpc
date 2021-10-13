@@ -14,14 +14,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/asim/go-micro/v3/cmd"
+	"github.com/asim/go-micro/v3/logger"
+	"github.com/asim/go-micro/v3/registry"
+	"github.com/asim/go-micro/v3/util/addr"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/mem"
-	"github.com/micro/go-micro/v3/cmd"
-	"github.com/micro/go-micro/v3/logger"
-	"github.com/micro/go-micro/v3/registry"
-	"github.com/micro/go-micro/v3/util/addr"
 )
 
 type SysInfo struct {
