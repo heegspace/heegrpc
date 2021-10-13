@@ -10,22 +10,22 @@ import (
 	hystrixsrc "github.com/afex/hystrix-go/hystrix"
 	"github.com/gin-gonic/gin"
 
+	"github.com/asim/go-micro/plugins/wrapper/breaker/hystrix/v4"
 	"github.com/juju/ratelimit"
 	"github.com/micro/go-micro/v2/config"
 	"go-micro.dev/v4"
 	"go-micro.dev/v4/client"
 	"go-micro.dev/v4/logger"
 	"go-micro.dev/v4/metadata"
-	"go-micro.dev/v4/plugins/wrapper/breaker/hystrix"
 	"go-micro.dev/v4/selector"
 	"go-micro.dev/v4/server"
 
+	httpClient "github.com/asim/go-micro/plugins/client/http/v4"
+	httpServer "github.com/asim/go-micro/plugins/server/http/v4"
+	grpc "github.com/asim/go-micro/plugins/transport/grpc/v4"
+	ratelimiter "github.com/asim/go-micro/plugins/wrapper/ratelimiter/ratelimit/v4"
 	foot "github.com/heegspace/heegrpc/callfoot"
 	s2s "github.com/heegspace/heegrpc/registry"
-	httpClient "go-micro.dev/v4/plugins/client/http"
-	httpServer "go-micro.dev/v4/plugins/server/http"
-	grpc "go-micro.dev/v4/plugins/transport/grpc"
-	ratelimiter "go-micro.dev/v4/plugins/wrapper/ratelimiter/ratelimit"
 	registry "go-micro.dev/v4/registry"
 )
 
