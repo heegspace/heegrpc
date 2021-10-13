@@ -10,9 +10,9 @@ import (
 	hystrixsrc "github.com/afex/hystrix-go/hystrix"
 	"github.com/gin-gonic/gin"
 
-	"github.com/asim/go-micro/plugins/wrapper/breaker/hystrix/v3"
 	"github.com/juju/ratelimit"
 	"github.com/micro/go-micro/v2/config"
+	"go-micro.dev/plugins/wrapper/breaker/hystrix/v4"
 	"go-micro.dev/v4"
 	"go-micro.dev/v4/client"
 	"go-micro.dev/v4/logger"
@@ -20,12 +20,12 @@ import (
 	"go-micro.dev/v4/selector"
 	"go-micro.dev/v4/server"
 
-	httpClient "github.com/asim/go-micro/plugins/client/http/v3"
-	httpServer "github.com/asim/go-micro/plugins/server/http/v3"
-	grpc "github.com/asim/go-micro/plugins/transport/grpc/v3"
-	ratelimiter "github.com/asim/go-micro/plugins/wrapper/ratelimiter/ratelimit/v3"
 	foot "github.com/heegspace/heegrpc/callfoot"
 	s2s "github.com/heegspace/heegrpc/registry"
+	httpClient "go-micro.dev/plugins/client/http/v4"
+	httpServer "go-micro.dev/plugins/server/http/v4"
+	grpc "go-micro.dev/plugins/transport/grpc/v4"
+	ratelimiter "go-micro.dev/plugins/wrapper/ratelimiter/ratelimit/v4"
 	registry "go-micro.dev/v4/registry"
 )
 
@@ -368,3 +368,4 @@ func HttpRequest(svrname, method string, request, response interface{}, contentT
 
 	return
 }
+
