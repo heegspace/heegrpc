@@ -157,7 +157,7 @@ func NewClient() client.Client {
 // 获取服务对象
 //
 func NewService() micro.Service {
-	svr_name = micro.Name(config.Get("name").String(""))
+	svr_name = config.Get("name").String("")
 	hystrixsrc.DefaultTimeout = config.Get("timeout").Int(3) * 1000
 
 	// Create a new service. Optionally include some options here.
@@ -221,7 +221,7 @@ func NewService() micro.Service {
 // @return micro.Service
 //
 func HttpService(router *gin.Engine) micro.Service {
-	svr_name = micro.Name(config.Get("name").String(""))
+	svr_name = config.Get("name").String("")
 	hystrixsrc.DefaultTimeout = config.Get("timeout").Int(3) * 1000
 
 	// Create a new service. Optionally include some options here.
