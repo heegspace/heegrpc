@@ -29,6 +29,8 @@ import (
 	registry "go-micro.dev/v4/registry"
 )
 
+var svr_name string = ""
+
 func errstr(err error) string {
 	if nil == err {
 		return ""
@@ -56,7 +58,7 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 		err := cf(ctx, node, req, rsp, opts)
 		md, _ := metadata.FromContext(ctx)
 		freq := &foot.RPCFootReq{
-			Svrname: req.Service(),
+			Svrname: svr_name,
 			Method:  req.Method(),
 			Remote:  md["Remote"],
 			Localip: md["Local"],
@@ -105,7 +107,7 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 
 		md, _ := metadata.FromContext(ctx)
 		freq := &foot.RPCFootReq{
-			Svrname: req.Service(),
+			Svrname: svr_name,
 			Method:  req.Method(),
 			Remote:  md["Remote"],
 			Localip: md["Local"],
@@ -155,6 +157,7 @@ func NewClient() client.Client {
 // 获取服务对象
 //
 func NewService() micro.Service {
+	svr_name = micro.Name(config.Get("name").String(""))
 	hystrixsrc.DefaultTimeout = config.Get("timeout").Int(3) * 1000
 
 	// Create a new service. Optionally include some options here.
@@ -218,6 +221,7 @@ func NewService() micro.Service {
 // @return micro.Service
 //
 func HttpService(router *gin.Engine) micro.Service {
+	svr_name = micro.Name(config.Get("name").String(""))
 	hystrixsrc.DefaultTimeout = config.Get("timeout").Int(3) * 1000
 
 	// Create a new service. Optionally include some options here.
