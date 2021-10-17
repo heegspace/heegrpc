@@ -165,7 +165,7 @@ func NewClient() client.Client {
 	)
 
 	c := client.NewClient(
-		micro.Registry(regis),
+		client.Registry(regis),
 	)
 	c.Options().Selector.Init(selector.Registry(regis))
 
