@@ -55,22 +55,9 @@ func (obj response) String() string {
 func metricsWrap(cf client.CallFunc) client.CallFunc {
 	return func(ctx context.Context, node *registry.Node, req client.Request, rsp interface{}, opts client.CallOptions) error {
 		t := time.Now()
-		err := cf(ctx, node, req, rsp, opts)
-		md, _ := metadata.FromContext(ctx)
-		freq := &foot.RPCFootReq{
-			Svrname: svr_name,
-			Method:  req.Method(),
-			Remote:  md["Remote"],
-			Localip: md["Local"],
-			Timeout: int64(time.Since(t)),
-			Extra: map[string]string{
-				"error":   errstr(err),
-				"type":    "client",
-				"rescode": "-99",
-			},
-		}
-
 		var res response
+
+		err := cf(ctx, node, req, rsp, opts)
 		obj := reflect.ValueOf(rsp)
 		elem := obj.Elem()
 		if nil == err && nil != rsp && elem.Kind() == reflect.Struct {
@@ -91,10 +78,30 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 			}
 		}
 
-		// 上报数据到统计服务
-		var fres foot.RPCFootRes
-		ferr := HttpRequest(config.Get("statis", "svrname").String("footnode"), config.Get("static", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
-		logger.Infof("[Metrics Wrapper]-%v, Req: %v, Res: %s ,err: %v, footerr: %v, duration: %v\n", req.Method(), req.Body(), res, err, ferr, time.Since(t))
+		metrics := config.Get("metrics", "open").Bool(false)
+		if metrics {
+			md, _ := metadata.FromContext(ctx)
+			freq := &foot.RPCFootReq{
+				Svrname: svr_name,
+				Method:  req.Method(),
+				Remote:  md["Remote"],
+				Localip: md["Local"],
+				Timeout: int64(time.Since(t)),
+				Extra: map[string]string{
+					"error":   errstr(err),
+					"type":    "client",
+					"rescode": "-99",
+				},
+			}
+	
+			
+	
+			// 上报数据到统计服务
+			var fres foot.RPCFootRes
+			HttpRequest(config.Get("statis", "svrname").String("footnode"), config.Get("static", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
+		}
+
+		logger.Infof("[Metrics Wrapper]-%v, Req: %v, Res: %s ,err: %v, duration: %v\n", req.Method(), req.Body(), res, err, time.Since(t))
 		return err
 	}
 }
@@ -103,23 +110,9 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 	return func(ctx context.Context, req server.Request, rsp interface{}) error {
 		t := time.Now()
-		err := fn(ctx, req, rsp)
-
-		md, _ := metadata.FromContext(ctx)
-		freq := &foot.RPCFootReq{
-			Svrname: svr_name,
-			Method:  req.Method(),
-			Remote:  md["Remote"],
-			Localip: md["Local"],
-			Timeout: int64(time.Since(t)),
-			Extra: map[string]string{
-				"error":   errstr(err),
-				"type":    "service",
-				"rescode": "-99",
-			},
-		}
-
 		var res response
+
+		err := fn(ctx, req, rsp)
 		obj := reflect.ValueOf(rsp)
 		elem := obj.Elem()
 		if nil == err && nil != rsp && elem.Kind() == reflect.Struct {
@@ -139,10 +132,28 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 			}
 		}
 
-		// 上报数据到统计服务
-		var fres foot.RPCFootRes
-		ferr := HttpRequest(config.Get("statis", "svrname").String("footnode"), config.Get("static", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
-		logger.Infof("[Log Wrapper]-%v, Req: %v, Res: %s, from: %v, ip: %v, errinfo: %v, ferrinfo: %v, duration: %v\n", req.Method(), req.Body(), res, md["Remote"], md["Local"], err, ferr, time.Since(t))
+		metrics := config.Get("metrics", "open").Bool(false)
+		if metrics {
+			md, _ := metadata.FromContext(ctx)
+			freq := &foot.RPCFootReq{
+				Svrname: svr_name,
+				Method:  req.Method(),
+				Remote:  md["Remote"],
+				Localip: md["Local"],
+				Timeout: int64(time.Since(t)),
+				Extra: map[string]string{
+					"error":   errstr(err),
+					"type":    "service",
+					"rescode": "-99",
+				},
+			}
+	
+			// 上报数据到统计服务
+			var fres foot.RPCFootRes
+			HttpRequest(config.Get("statis", "svrname").String("footnode"), config.Get("static", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
+		}
+		
+		logger.Infof("[Log Wrapper]-%v, Req: %v, Res: %s, from: %v, ip: %v, errinfo: %v, duration: %v\n", req.Method(), req.Body(), res, md["Remote"], md["Local"], err, time.Since(t))
 		return err
 	}
 }
