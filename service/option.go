@@ -80,3 +80,9 @@ func LoadConf(conffile string, conf interface{}) (err error) {
 	s2s.SetWatchNode(watchnodes)
 	return
 }
+
+// https://github.com/shockerjue/apollo
+func ApolloConf(namespace string, conf interface{}) (err error) {
+
+	return 
+}
