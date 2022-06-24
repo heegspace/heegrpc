@@ -26,6 +26,7 @@ import (
 	ratelimiter "github.com/asim/go-micro/plugins/wrapper/ratelimiter/ratelimit/v4"
 	foot "github.com/heegspace/heegrpc/callfoot"
 	s2s "github.com/heegspace/heegrpc/registry"
+	console "github.com/heegspace/heegrpc/console"
 	registry "go-micro.dev/v4/registry"
 )
 
@@ -430,4 +431,53 @@ func HttpRequest(svrname, method string, request, response interface{}, contentT
 	}
 
 	return
+}
+
+func Console(cmdcb CmdCb) {
+	cfg := console.ConsoleListenerConfig{
+		MaxMessageSize: 1 << 20,
+		EnableLogging:  true,
+		Address:        buffstreams.FormatAddress("127.0.0.1", strconv.Itoa(0)),
+		ListenCb: func(ctx context.Context, conn *net.TCPListener) error {
+			logger.Info("LCallback ---------- ", conn.Addr().String())
+
+			return nil
+		},
+		ConnectCb: func(ctx context.Context, conn *net.TCPConn) error {
+			logger.Info("ConnectCb ---------- ", conn.RemoteAddr())
+
+			return nil
+		},
+		CloseCb: func(ctx context.Context, conn *net.TCPConn) error {
+			logger.Info("CloseCb ---------- ", conn.RemoteAddr())
+
+			return nil
+		},
+		CmdCb: func(ctx context.Context, conn *net.TCPConn, cmd string) error {
+			if nil != cmdcb {
+				res := cmdcb(ctx, conn, cmd)
+				WriteToConsole(conn, []byte(res))
+			}
+
+			return nil
+		},
+		RTimeout: 120,
+	}
+
+	btl, err := console.ListenConsole(cfg)
+	if err != nil {
+		logger.Error("ListenConsole ", err)
+
+		return
+	}
+	defer btl.Close()
+
+	err = btl.StartListeningAsync()
+	if nil != err {
+		logger.Error("StartListening ", err)
+
+		return
+	}
+
+	return 
 }
