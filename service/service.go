@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"reflect"
 	"time"
+	"strconv"
+	"net"
+
 
 	hystrixsrc "github.com/afex/hystrix-go/hystrix"
 	"github.com/gin-gonic/gin"
@@ -19,6 +22,7 @@ import (
 	"go-micro.dev/v4/metadata"
 	"go-micro.dev/v4/selector"
 	"go-micro.dev/v4/server"
+	"github.com/StabbyCutyou/buffstreams"
 
 	httpClient "github.com/asim/go-micro/plugins/client/http/v4"
 	httpServer "github.com/asim/go-micro/plugins/server/http/v4"
@@ -433,7 +437,7 @@ func HttpRequest(svrname, method string, request, response interface{}, contentT
 	return
 }
 
-func Console(cmdcb CmdCb) {
+func Console(cmdcb console.CmdCb) {
 	cfg := console.ConsoleListenerConfig{
 		MaxMessageSize: 1 << 20,
 		EnableLogging:  true,
@@ -456,7 +460,7 @@ func Console(cmdcb CmdCb) {
 		CmdCb: func(ctx context.Context, conn *net.TCPConn, cmd string) error {
 			if nil != cmdcb {
 				res := cmdcb(ctx, conn, cmd)
-				WriteToConsole(conn, []byte(res))
+				console.WriteToConsole(conn, []byte(res))
 			}
 
 			return nil
