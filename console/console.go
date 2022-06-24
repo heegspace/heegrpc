@@ -226,4 +226,3 @@ func WriteToConsole(conn *net.TCPConn, packet []byte) (n int, err error) {
 	conn.Write(packet)
 	return
 }
-

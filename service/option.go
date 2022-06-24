@@ -84,5 +84,5 @@ func LoadConf(conffile string, conf interface{}) (err error) {
 // https://github.com/shockerjue/apollo
 func ApolloConf(namespace string, conf interface{}) (err error) {
 
-	return 
+	return
 }
