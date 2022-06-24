@@ -437,7 +437,7 @@ func HttpRequest(svrname, method string, request, response interface{}, contentT
 	return
 }
 
-func Console(cmdcb console.CmdCb) {
+func Console(retCb console.RetCb) {
 	cfg := console.ConsoleListenerConfig{
 		MaxMessageSize: 1 << 20,
 		EnableLogging:  true,
@@ -458,8 +458,8 @@ func Console(cmdcb console.CmdCb) {
 			return nil
 		},
 		CmdCb: func(ctx context.Context, conn *net.TCPConn, cmd string) error {
-			if nil != cmdcb {
-				res := cmdcb(ctx, conn, cmd)
+			if nil != retCb {
+				res := retCb(cmd)
 				console.WriteToConsole(conn, []byte(res))
 			}
 
