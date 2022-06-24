@@ -25,4 +25,4 @@ type ListenCb func(context.Context, *net.TCPListener) error
 type RecvCb func(context.Context, *net.TCPConn, int, []byte) error
 type ConnectCb func(context.Context, *net.TCPConn) error
 type CloseCb func(context.Context, *net.TCPConn) error
-type CmdCb func(context.Context, *net.TCPConn, string) error
+type CmdCb func(context.Context, *net.TCPConn, string) string
