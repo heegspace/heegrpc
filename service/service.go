@@ -27,6 +27,7 @@ import (
 	httpServer "github.com/asim/go-micro/plugins/server/http/v4"
 	grpc "github.com/asim/go-micro/plugins/transport/grpc/v4"
 	ratelimiter "github.com/asim/go-micro/plugins/wrapper/ratelimiter/ratelimit/v4"
+	"github.com/heegspace/heegapo"
 	foot "github.com/heegspace/heegrpc/callfoot"
 	console "github.com/heegspace/heegrpc/console"
 	s2s "github.com/heegspace/heegrpc/registry"
@@ -97,7 +98,8 @@ func metricsWrap(cf client.CallFunc) client.CallFunc {
 
 		// 上报数据到统计服务
 		var fres foot.RPCFootRes
-		ferr := HttpRequest(config.Get("statis", "svrname").String("footnode"), config.Get("static", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
+		ferr := HttpRequest(heegapo.DefaultApollo.Config("heegspace.common.yaml", "statis", "svrname").String("footnode"),
+			heegapo.DefaultApollo.Config("heegspace.common.yaml", "statis", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
 		logger.Infof("[Metrics Wrapper]-%v, Req: %v, Res: %s ,err: %v, footerr: %v, duration: %v\n", req.Method(), req.Body(), res, err, ferr, time.Since(t))
 		return err
 	}
@@ -145,7 +147,8 @@ func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
 
 		// 上报数据到统计服务
 		var fres foot.RPCFootRes
-		ferr := HttpRequest(config.Get("statis", "svrname").String("footnode"), config.Get("static", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
+		ferr := HttpRequest(heegapo.DefaultApollo.Config("heegspace.common.yaml", "statis", "svrname").String("footnode"),
+			heegapo.DefaultApollo.Config("heegspace.common.yaml", "statis", "rpcmethod").String("/foot/rpc"), freq, &fres, "application/proto")
 		logger.Infof("[Log Wrapper]-%v, Req: %v, Res: %s, from: %v, ip: %v, errinfo: %v, ferrinfo: %v, duration: %v\n", req.Method(), req.Body(), res, md["Remote"], md["Local"], err, ferr, time.Since(t))
 		return err
 	}
@@ -162,15 +165,16 @@ func NewClient() client.Client {
 //
 func NewService() micro.Service {
 	svr_name = config.Get("name").String("")
-	hystrixsrc.DefaultTimeout = config.Get("timeout").Int(3) * 1000
+	hystrixsrc.DefaultTimeout = heegapo.DefaultApollo.Config("heegspace.common.yaml", "timeout").Int(3) * 1000
 
 	// Create a new service. Optionally include some options here.
 	// 设置限流，设置能同时处理的请求数，超过这个数就不继续处理
-	br := ratelimit.NewBucketWithRate(float64(config.Get("rate").Int(1000)), int64(config.Get("rate").Int(1000)+200))
+	br := ratelimit.NewBucketWithRate(heegapo.DefaultApollo.Config("heegspace.common.yaml", "rate").Float64(1000),
+		heegapo.DefaultApollo.Config("heegspace.common.yaml", "rate").Int64(1000+200))
 
 	regis := s2s.NewRegistry(
-		registry.Addrs(config.Get("s2s", "address").String("")),
-		registry.Secure(config.Get("s2s", "secure").Bool(false)),
+		registry.Addrs(heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "address").String("")),
+		registry.Secure(heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "secure").Bool()),
 	)
 	svr := micro.NewService(
 		micro.Name(config.Get("name").String("")),
@@ -224,15 +228,16 @@ func NewService() micro.Service {
 //
 func NewServiceNoMetrics() micro.Service {
 	svr_name = config.Get("name").String("")
-	hystrixsrc.DefaultTimeout = config.Get("timeout").Int(3) * 1000
+	hystrixsrc.DefaultTimeout = heegapo.DefaultApollo.Config("heegspace.common.yaml", "timeout").Int(3) * 1000
 
 	// Create a new service. Optionally include some options here.
 	// 设置限流，设置能同时处理的请求数，超过这个数就不继续处理
-	br := ratelimit.NewBucketWithRate(float64(config.Get("rate").Int(1000)), int64(config.Get("rate").Int(1000)+200))
+	br := ratelimit.NewBucketWithRate(heegapo.DefaultApollo.Config("heegspace.common.yaml", "rate").Float64(1000),
+		heegapo.DefaultApollo.Config("heegspace.common.yaml", "rate").Int64(1000)+200)
 
 	regis := s2s.NewRegistry(
-		registry.Addrs(config.Get("s2s", "address").String("")),
-		registry.Secure(config.Get("s2s", "secure").Bool(false)),
+		registry.Addrs(heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "address").String("")),
+		registry.Secure(heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "secure").Bool()),
 	)
 	svr := micro.NewService(
 		micro.Name(config.Get("name").String("")),
@@ -284,11 +289,12 @@ func NewServiceNoMetrics() micro.Service {
 //
 func HttpService(router *gin.Engine) micro.Service {
 	svr_name = config.Get("name").String("")
-	hystrixsrc.DefaultTimeout = config.Get("timeout").Int(3) * 1000
+	hystrixsrc.DefaultTimeout = heegapo.DefaultApollo.Config("heegspace.common.yaml", "timeout").Int(3) * 1000
 
 	// Create a new service. Optionally include some options here.
 	// 设置限流，设置能同时处理的请求数，超过这个数就不继续处理
-	br := ratelimit.NewBucketWithRate(float64(config.Get("rate").Int(1000)), int64(config.Get("rate").Int(1000)+200))
+	br := ratelimit.NewBucketWithRate(heegapo.DefaultApollo.Config("heegspace.common.yaml", "rate").Float64(1000),
+		heegapo.DefaultApollo.Config("heegspace.common.yaml", "rate").Int64(1000)+200)
 
 	srv := httpServer.NewServer(
 		server.Name(config.Get("name").String("")),
@@ -302,8 +308,8 @@ func HttpService(router *gin.Engine) micro.Service {
 	}
 
 	regis := s2s.NewRegistry(
-		registry.Addrs(config.Get("s2s", "address").String("")),
-		registry.Secure(config.Get("s2s", "secure").Bool(false)),
+		registry.Addrs(heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "address").String("")),
+		registry.Secure(heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "secure").Bool()),
 	)
 	svrice := micro.NewService(
 		micro.Server(srv),
@@ -377,8 +383,8 @@ func HttpCodec(contentType string) (codec Codec, err error) {
 //
 func HttpClient() client.Client {
 	regis := s2s.NewRegistry(
-		registry.Addrs(config.Get("s2s", "address").String("")),
-		registry.Secure(config.Get("s2s", "secure").Bool(false)),
+		registry.Addrs(heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "address").String("")),
+		registry.Secure(heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "secure").Bool()),
 	)
 
 	s := selector.NewSelector(selector.Registry(regis))
