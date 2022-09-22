@@ -3,6 +3,7 @@ package registry
 
 import (
 	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,71 +15,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/disk"
-	"github.com/shirou/gopsutil/v3/host"
-	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/heegspace/appcom"
 	"go-micro.dev/v4/cmd"
 	"go-micro.dev/v4/logger"
 	"go-micro.dev/v4/registry"
-	"go-micro.dev/v4/util/addr"
 )
-
-type SysInfo struct {
-	HostName   string   `json:"hostname,omitempty"`
-	OS         string   `json:"os,omitempty"`
-	CpuNum     int      `json:"cpu_num,omitempty"`
-	CpuPercent float64  `json:"cpu_percent,omitempty"`
-	MemTotal   uint64   `json:"mem_total,omitempty"`
-	MemUsed    uint64   `json:"mem_used,omitempty"`
-	DiskTotal  uint64   `json:"disk_total,omitempty"`
-	DiskUsed   uint64   `json:"disk_used,omitempty"`
-	Ips        []string `json:"ips,omitempty"`
-}
-
-func getsysinfo() string {
-	var sysinfo SysInfo
-
-	hostinfo, err := host.Info()
-	if nil == err {
-		sysinfo.HostName = hostinfo.Hostname
-		sysinfo.OS = hostinfo.OS
-	}
-
-	count, err := cpu.Counts(true)
-	if nil == err {
-		sysinfo.CpuNum = count
-	}
-
-	percent, err := cpu.Percent(time.Second, false)
-	if nil == err && 0 < len(percent) {
-		sysinfo.CpuPercent = percent[0]
-	}
-
-	memInfo, err := mem.VirtualMemory()
-	if nil == err && nil != memInfo {
-		sysinfo.MemTotal = memInfo.Total
-		sysinfo.MemUsed = memInfo.Used
-	}
-
-	parts, err := disk.Partitions(true)
-	if nil == err && 0 < len(parts) {
-		for _, v := range parts {
-			diskInfo, err := disk.Usage(v.Mountpoint)
-			if nil != err {
-				continue
-			}
-
-			sysinfo.DiskTotal = sysinfo.DiskTotal + diskInfo.Total
-			sysinfo.DiskUsed = sysinfo.DiskUsed + diskInfo.Used
-		}
-
-	}
-
-	sysinfo.Ips = addr.IPs()
-	info, _ := json.Marshal(sysinfo)
-	return string(info)
-}
 
 type proxy struct {
 	opts registry.Options
@@ -175,27 +116,44 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 
 	var gerr error
 	for _, addr := range s.opts.Addrs {
-		scheme := "http"
-		if s.opts.Secure {
-			scheme = "https"
-		}
-		url := fmt.Sprintf("%s://%s/registry", scheme, addr)
-		rsp, err := http.Post(url, "application/json", bytes.NewReader(b))
-		if err != nil {
-			gerr = err
-			continue
-		}
-		if rsp.StatusCode != 200 {
-			b, err := ioutil.ReadAll(rsp.Body)
-			if err != nil {
+		if S2sClient().enable() {
+			var req StreamReq
+			req.Cmd = "update"
+			req.Data = string(b)
+			buf := &bytes.Buffer{}
+			enc := gob.NewEncoder(buf)
+			err := enc.Encode(req)
+			if nil != err {
 				return err
 			}
+
+			_, err = appcom.WriteToConnections(S2sClient().GetConn(), buf.Bytes())
+			if nil != err {
+				return err
+			}
+		} else {
+			scheme := "http"
+			if s.opts.Secure {
+				scheme = "https"
+			}
+			url := fmt.Sprintf("%s://%s/registry", scheme, addr)
+			rsp, err := http.Post(url, "application/json", bytes.NewReader(b))
+			if err != nil {
+				gerr = err
+				continue
+			}
+			if rsp.StatusCode != 200 {
+				b, err := ioutil.ReadAll(rsp.Body)
+				if err != nil {
+					return err
+				}
+				rsp.Body.Close()
+				gerr = errors.New(string(b))
+				continue
+			}
+			io.Copy(ioutil.Discard, rsp.Body)
 			rsp.Body.Close()
-			gerr = errors.New(string(b))
-			continue
 		}
-		io.Copy(ioutil.Discard, rsp.Body)
-		rsp.Body.Close()
 
 		GetDeregister().LocalSvr = service
 		return nil
@@ -212,36 +170,54 @@ func (s *proxy) Deregister(service *registry.Service, opts ...registry.Deregiste
 
 	var gerr error
 	for _, addr := range s.opts.Addrs {
-		scheme := "http"
-		if s.opts.Secure {
-			scheme = "https"
-		}
-		url := fmt.Sprintf("%s://%s/registry", scheme, addr)
-
-		req, err := http.NewRequest("DELETE", url, bytes.NewReader(b))
-		if err != nil {
-			gerr = err
-			continue
-		}
-
-		rsp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			gerr = err
-			continue
-		}
-
-		if rsp.StatusCode != 200 {
-			b, err := ioutil.ReadAll(rsp.Body)
-			if err != nil {
+		if S2sClient().enable() {
+			var req StreamReq
+			req.Cmd = "delete"
+			req.Data = string(b)
+			buf := &bytes.Buffer{}
+			enc := gob.NewEncoder(buf)
+			err := enc.Encode(req)
+			if nil != err {
 				return err
 			}
+
+			_, err = appcom.WriteToConnections(S2sClient().GetConn(), buf.Bytes())
+			if nil != err {
+				return err
+			}
+		} else {
+			scheme := "http"
+			if s.opts.Secure {
+				scheme = "https"
+			}
+			url := fmt.Sprintf("%s://%s/registry", scheme, addr)
+
+			req, err := http.NewRequest("DELETE", url, bytes.NewReader(b))
+			if err != nil {
+				gerr = err
+				continue
+			}
+
+			rsp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				gerr = err
+				continue
+			}
+
+			if rsp.StatusCode != 200 {
+				b, err := ioutil.ReadAll(rsp.Body)
+				if err != nil {
+					return err
+				}
+				rsp.Body.Close()
+				gerr = errors.New(string(b))
+				continue
+			}
+
+			io.Copy(ioutil.Discard, rsp.Body)
 			rsp.Body.Close()
-			gerr = errors.New(string(b))
-			continue
 		}
 
-		io.Copy(ioutil.Discard, rsp.Body)
-		rsp.Body.Close()
 		GetDeregister().De()
 
 		return nil
@@ -312,39 +288,57 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 	}
 
 	var gerr error
+	var services []*registry.Service
 	for _, addr := range s.opts.Addrs {
-		scheme := "http"
-		if s.opts.Secure {
-			scheme = "https"
-		}
+		if S2sClient().enable() {
+			var req StreamReq
+			req.Cmd = "delete"
+			req.Data = service
+			buf := &bytes.Buffer{}
+			enc := gob.NewEncoder(buf)
+			err := enc.Encode(req)
+			if nil != err {
+				return err
+			}
 
-		url := fmt.Sprintf("%s://%s/registry/%s", scheme, addr, url.QueryEscape(service))
-		rsp, err := http.Get(url)
-		if err != nil {
-			gerr = err
-			continue
-		}
+			_, err = appcom.WriteToConnections(S2sClient().GetConn(), buf.Bytes())
+			if nil != err {
+				return err
+			}
+		} else {
+			scheme := "http"
+			if s.opts.Secure {
+				scheme = "https"
+			}
 
-		if rsp.StatusCode != 200 {
+			url := fmt.Sprintf("%s://%s/registry/%s", scheme, addr, url.QueryEscape(service))
+			rsp, err := http.Get(url)
+			if err != nil {
+				gerr = err
+				continue
+			}
+
+			if rsp.StatusCode != 200 {
+				b, err := ioutil.ReadAll(rsp.Body)
+				if err != nil {
+					return nil, err
+				}
+				rsp.Body.Close()
+				gerr = errors.New(string(b))
+				continue
+			}
+
 			b, err := ioutil.ReadAll(rsp.Body)
 			if err != nil {
-				return nil, err
+				gerr = err
+				continue
 			}
 			rsp.Body.Close()
-			gerr = errors.New(string(b))
-			continue
-		}
 
-		b, err := ioutil.ReadAll(rsp.Body)
-		if err != nil {
-			gerr = err
-			continue
-		}
-		rsp.Body.Close()
-		var services []*registry.Service
-		if err := json.Unmarshal(b, &services); err != nil {
-			gerr = err
-			continue
+			if err := json.Unmarshal(b, &services); err != nil {
+				gerr = err
+				continue
+			}
 		}
 
 		return services, nil
