@@ -19,6 +19,7 @@ import (
 	"go-micro.dev/v4/cmd"
 	"go-micro.dev/v4/logger"
 	"go-micro.dev/v4/registry"
+	"go.uber.org/zap"
 )
 
 type proxy struct {
@@ -452,9 +453,9 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 				result = msg
 			}
 		case <-time.After(time.Millisecond * time.Duration(300)):
-			logger.Debug("getService wait response timeout!", zap.Any("s2sname", service))
+			logger.Debug("getService wait response timeout!", zap.Any("s2sname", s2sname))
 
-			return nil, errors.New("getServices " + service + " timeout!")
+			return nil, errors.New("getServices " + s2sname + " timeout!")
 		}
 
 		if len(result) == 0 {
@@ -569,8 +570,10 @@ func (s *proxy) crontab() {
 	for {
 		select {
 		case <-ticker.C:
-			fn()
-		case <-refresh:
+			if !TcpS2s().enable() {
+				fn()
+			}
+		case <-s.refresh:
 			fn()
 		}
 	}

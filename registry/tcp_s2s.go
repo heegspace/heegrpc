@@ -42,7 +42,7 @@ func TcpS2s() *tcpS2s {
 	once.Do(func() {
 		addr := ""
 		ip := heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "tcp_ip").String("")
-		port := heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "tcp_port").Int32(-1)
+		port := heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "tcp_port").Int64(-1)
 		if len(ip) != 0 && 0 < port {
 			addr = fmt.Sprintf("%s:%d", ip, port)
 		}
@@ -97,7 +97,7 @@ func (this *tcpS2s) Connect() {
 }
 
 func (this *proxy) onStart() {
-	if !this.enable() {
+	if !TcpS2s().enable() {
 		return
 	}
 
@@ -144,9 +144,9 @@ func (this *proxy) onStart() {
 				// 收到通知重新获取节点信息
 				switch res.Code {
 				case "update":
-					refresh <- true
+					this.refresh <- true
 				case "delete":
-					refresh <- true
+					this.refresh <- true
 				}
 
 				return nil
