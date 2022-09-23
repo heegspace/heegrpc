@@ -144,7 +144,8 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
 		if nil != err {
 			logger.Error("Register err", zap.Error(err))
-
+			TcpS2s().Connect()
+			
 			return err
 		}
 
