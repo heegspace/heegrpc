@@ -181,8 +181,6 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 			TcpS2s().Connect()
 			req.Extra["first"] = "first"
 			goto register
-
-			return err
 		}
 
 		GetDeregister().LocalSvr = service
@@ -239,9 +237,12 @@ func (s *proxy) Deregister(service *registry.Service, opts ...registry.Deregiste
 			return err
 		}
 
+	register:
 		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
 		if nil != err {
-			return err
+			logger.Error("Deregister WriteToConnections err", zap.Error(err))
+			TcpS2s().Connect()
+			goto register
 		}
 
 		GetDeregister().De()
@@ -368,9 +369,12 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 			return nil, err
 		}
 
+	register:
 		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
 		if nil != err {
-			return nil, err
+			logger.Error("getService WriteToConnections err", zap.Error(err))
+			TcpS2s().Connect()
+			goto register
 		}
 
 		// wait response, timeout 300ms
@@ -390,7 +394,7 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 				result = msg
 			}
 		case <-time.After(time.Millisecond * time.Duration(300)):
-			logger.Debug("getService wait response timeout!", zap.Any("s2sname", service))
+			logger.Error("getService wait response timeout!", zap.Any("s2sname", service), zap.Any("req", req))
 
 			return nil, errors.New("getService " + service + " timeout!")
 		}
@@ -478,9 +482,12 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 			return nil, err
 		}
 
+	register:
 		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
 		if nil != err {
-			return nil, err
+			logger.Error("getServices WriteToConnections  err", zap.Error(err))
+			TcpS2s().Connect()
+			goto register
 		}
 
 		// wait response, timeout 300ms
