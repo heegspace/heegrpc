@@ -124,15 +124,15 @@ func (this *proxy) onStart() {
 
 					case "get":
 						this.chlock.RLock()
-						if _, ok := this.upch[req.res]; ok {
-							this.upch[req.res] <- res.Data
+						if _, ok := this.upch[res.Tag]; ok {
+							this.upch[res.Tag] <- res.Data
 						}
 						this.chlock.RUnlock()
 
 					case "gets":
 						this.chlock.RLock()
-						if _, ok := this.upch[req.res]; ok {
-							this.upch[req.res] <- res.Data
+						if _, ok := this.upch[res.Tag]; ok {
+							this.upch[res.Tag] <- res.Data
 						}
 						this.chlock.RUnlock()
 					}
