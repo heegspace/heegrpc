@@ -83,10 +83,10 @@ func newRegistry(opts ...registry.Option) registry.Registry {
 			svrs:    make(map[string][]*registry.Service),
 			upch:    make(map[string]chan string),
 			refresh: make(chan bool, 2),
-			lock:    sync.RWMutex{},
+			chlock:   sync.RWMutex{},
 		}
 
-		go gs.refresh()
+		go gs.crontab()
 		configure(gs, opts...)
 	}
 
@@ -327,17 +327,17 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 
 		// wait response, timeout 300ms
 		result := ""
-		this.chlock.Lock()
-		this.upch[req.Tag] = make(chan string, 1)
-		this.chlock.Unlock()
+		s.chlock.Lock()
+		s.upch[req.Tag] = make(chan string, 1)
+		s.chlock.Unlock()
 		defer func() {
-			this.chlock.Lock()
-			close(this.upch[req.Tag])
-			delete(this.upch, req.Tag)
-			this.chlock.Unlock()
+			s.chlock.Lock()
+			close(s.upch[req.Tag])
+			delete(s.upch, req.Tag)
+			s.chlock.Unlock()
 		}()
 		select {
-		case msg, ok := <-this.upch[req.Tag]:
+		case msg, ok := <-s.upch[req.Tag]:
 			if ok {
 				result = msg
 			}
@@ -437,17 +437,17 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 
 		// wait response, timeout 300ms
 		result := ""
-		this.chlock.Lock()
-		this.upch[req.Tag] = make(chan string, 1)
-		this.chlock.Unlock()
+		s.chlock.Lock()
+		s.upch[req.Tag] = make(chan string, 1)
+		s.chlock.Unlock()
 		defer func() {
-			this.chlock.Lock()
-			close(this.upch[req.Tag])
-			delete(this.upch, req.Tag)
-			this.chlock.Unlock()
+			s.chlock.Lock()
+			close(s.upch[req.Tag])
+			delete(s.upch, req.Tag)
+			s.chlock.Unlock()
 		}()
 		select {
-		case msg, ok := <-this.upch[req.Tag]:
+		case msg, ok := <-s.upch[req.Tag]:
 			if ok {
 				result = msg
 			}
@@ -540,7 +540,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 
 // 刷新订阅的s2s信息
 //
-func (s *proxy) refresh() {
+func (s *proxy) crontab() {
 	if 0 == len(watchNode) {
 		return
 	}
@@ -551,7 +551,7 @@ func (s *proxy) refresh() {
 		if nil != err {
 			logger.Error("Refresh getService err ", err)
 
-			continue
+			return 
 		}
 		for k, v := range svrs {
 			if 0 == len(v) {
