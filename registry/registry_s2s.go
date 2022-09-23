@@ -87,9 +87,12 @@ func newRegistry(opts ...registry.Option) registry.Registry {
 			chlock:   sync.RWMutex{},
 		}
 
-		TcpS2s().Connect()
+		if TcpS2s().enable() {
+			TcpS2s().Connect()
+			gs.onStart()
+		}
+
 		go gs.crontab()
-		gs.onStart()
 
 		configure(gs, opts...)
 	}
