@@ -16,9 +16,9 @@ import (
 )
 
 type StreamReq struct {
-	Cmd  string `json:"cmd"`
-	Data string `json:"data"`
-	Tag  string `json:"tag"`
+	Cmd   string            `json:"cmd"`
+	Data  string            `json:"data"`
+	Tag   string            `json:"tag"`
 	Extra map[string]string `json:"extra"`
 }
 
@@ -112,11 +112,10 @@ func (this *proxy) onStart() {
 				err = dec.Decode(&res)
 				if nil != err {
 					logger.Error("ReadFromTcp err", zap.Error(err))
-					
-					return 
+
+					return
 				}
 
-				logger.Info("ReadFromTcp ", zap.Any("size", size), zap.Any("res", res))
 				if "notify" != res.Cmd {
 					switch res.Cmd {
 					case "update":

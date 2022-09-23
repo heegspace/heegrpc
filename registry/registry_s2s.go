@@ -35,10 +35,33 @@ type proxy struct {
 	first bool
 }
 
-var watchNode []string
+type watchType = []string
+type WatchNode struct {
+	watchType
+
+	lock sync.RWMutex
+}
+
+func (w *WatchNode) Add(obj string) {
+	w.lock.Lock()
+	defer w.lock.Unlock()
+
+	for _, v := range w.watchType {
+		if v == obj {
+			return
+		}
+	}
+
+	w.watchType = append(w.watchType, obj)
+}
+
+func (w *WatchNode) Nodes() []string {
+	return w.watchType
+}
+
+var watchNode WatchNode
 
 func init() {
-	watchNode = make([]string, 0)
 	cmd.DefaultRegistries["proxy"] = NewRegistry
 }
 
@@ -52,7 +75,7 @@ func SetWatchNode(nodes []string) {
 	}
 
 	for _, v := range nodes {
-		watchNode = append(watchNode, v)
+		watchNode.Add(v)
 	}
 
 	return
@@ -86,8 +109,8 @@ func newRegistry(opts ...registry.Option) registry.Registry {
 			svrs:    make(map[string][]*registry.Service),
 			upch:    make(map[string]chan string),
 			refresh: make(chan bool, 2),
-			chlock:   sync.RWMutex{},
-			first: false,
+			chlock:  sync.RWMutex{},
+			first:   false,
 		}
 
 		if TcpS2s().enable() {
@@ -151,7 +174,7 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 			return err
 		}
 
-register:
+	register:
 		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
 		if nil != err {
 			logger.Error("Register err", zap.Error(err))
@@ -278,6 +301,8 @@ func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*regis
 
 		return nil, errors.New("Service name is nil")
 	}
+
+	watchNode.Add(service)
 
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
@@ -565,17 +590,17 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 // 刷新订阅的s2s信息
 //
 func (s *proxy) crontab() {
-	if 0 == len(watchNode) {
+	if 0 == len(watchNode.watchType) {
 		return
 	}
 
 	fn := func() {
-		names := strings.Join(watchNode, ",")
+		names := strings.Join(watchNode.watchType, ",")
 		svrs, err := s.getServices(names)
 		if nil != err {
 			logger.Error("Refresh getService err ", err)
 
-			return 
+			return
 		}
 		for k, v := range svrs {
 			if 0 == len(v) {
