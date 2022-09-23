@@ -319,7 +319,7 @@ func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*regis
 		return item, nil
 	}
 
-	logger.Info(service, " node cache not exists.")
+	logger.Debug(service, " node cache not exists.")
 	return s.getService(service)
 }
 
@@ -390,7 +390,7 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 				result = msg
 			}
 		case <-time.After(time.Millisecond * time.Duration(300)):
-			logger.Error("getService wait response timeout!", zap.Any("s2sname", service))
+			logger.Debug("getService wait response timeout!", zap.Any("s2sname", service))
 
 			return nil, errors.New("getService " + service + " timeout!")
 		}
@@ -500,7 +500,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 				result = msg
 			}
 		case <-time.After(time.Millisecond * time.Duration(300)):
-			logger.Error("getService wait response timeout!", zap.Any("s2sname", s2sname))
+			logger.Debug("getService wait response timeout!", zap.Any("s2sname", s2sname))
 
 			return nil, errors.New("getServices " + s2sname + " timeout!")
 		}
@@ -529,7 +529,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 			}
 		}
 
-		logger.Error("getServices success", zap.Any("services", services))
+		logger.Debug("getServices success", zap.Any("services", services))
 		return services, nil
 	}
 
@@ -591,7 +591,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 //
 func (s *proxy) crontab() {
 	fn := func() {
-		logger.Error("crontab update", zap.Any("size", len(watchNode.watchType)))
+		logger.Debug("crontab update", zap.Any("size", len(watchNode.watchType)))
 		if 0 == len(watchNode.watchType) {
 			return
 		}
@@ -619,9 +619,7 @@ func (s *proxy) crontab() {
 	for {
 		select {
 		case <-ticker.C:
-			if !TcpS2s().enable() {
-				fn()
-			}
+			fn()
 		case <-s.refresh:
 			fn()
 		}
