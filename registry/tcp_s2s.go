@@ -18,15 +18,17 @@ import (
 type StreamReq struct {
 	Cmd  string `json:"cmd"`
 	Data string `json:"data"`
+	Tag  string `json:"tag"`
 }
 
 type StreamRes struct {
 	Cmd  string `json:"cmd"`
-	Code string `json:"rescode"`
+	Code string `json:"code"`
 	Data string `json:"data"`
+	Tag  string `json:"tag"`
 }
 
-type s2sClient struct {
+type tcpS2s struct {
 	conn   *net.TCPConn
 	rwlock sync.RWMutex
 
@@ -34,9 +36,9 @@ type s2sClient struct {
 }
 
 var once sync.Once
-var g_s2sCli *s2sClient
+var g_s2sCli *tcpS2s
 
-func S2sClient() *s2sClient {
+func TcpS2s() *tcpS2s {
 	once.Do(func() {
 		addr := ""
 		ip := heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "tcp_ip").String("")
@@ -45,7 +47,7 @@ func S2sClient() *s2sClient {
 			addr = fmt.Sprintf("%s:%d", ip, port)
 		}
 		if nil == g_s2sCli {
-			g_s2sCli = &s2sClient{
+			g_s2sCli = &tcpS2s{
 				rwlock: sync.RWMutex{},
 				addr:   addr,
 			}
@@ -55,7 +57,7 @@ func S2sClient() *s2sClient {
 	return g_s2sCli
 }
 
-func (this *s2sClient) enable() bool {
+func (this *tcpS2s) enable() bool {
 	if len(this.addr) != 0 {
 		return true
 	}
@@ -63,14 +65,14 @@ func (this *s2sClient) enable() bool {
 	return false
 }
 
-func (this *s2sClient) GetConn() *net.TCPConn {
+func (this *tcpS2s) GetConn() *net.TCPConn {
 	this.rwlock.RLock()
 	defer this.rwlock.RUnlock()
 
 	return this.conn
 }
 
-func (this *s2sClient) Connect() {
+func (this *tcpS2s) Connect() {
 	if len(this.addr) == 0 {
 		return
 	}
@@ -94,7 +96,7 @@ func (this *s2sClient) Connect() {
 	logger.Info("Connect to s2s success!")
 }
 
-func (this *s2sClient) onStart() {
+func (this *proxy) onStart() {
 	if !this.enable() {
 		return
 	}
@@ -102,7 +104,7 @@ func (this *s2sClient) onStart() {
 	go func() {
 		i := 0
 		for {
-			appcom.ReadFromTcp(S2sClient().GetConn(), func(ctx context.Context, conn *net.TCPConn, size int, data []byte) (err error) {
+			appcom.ReadFromTcp(TcpS2s().GetConn(), func(ctx context.Context, conn *net.TCPConn, size int, data []byte) (err error) {
 				var res StreamRes
 				buf := bytes.NewBufferString(string(data))
 				dec := gob.NewDecoder(buf)
@@ -121,21 +123,32 @@ func (this *s2sClient) onStart() {
 					case "delete":
 
 					case "get":
+						this.chlock.RLock()
+						if _, ok := this.upch[req.res]; ok {
+							this.upch[req.res] <- res.Data
+						}
+						this.chlock.RUnlock()
 
 					case "gets":
-
+						this.chlock.RLock()
+						if _, ok := this.upch[req.res]; ok {
+							this.upch[req.res] <- res.Data
+						}
+						this.chlock.RUnlock()
 					}
 
 					return
 				}
 
 				// s2s服务主动推送的消息
+				// 收到通知重新获取节点信息
 				switch res.Code {
 				case "update":
-
+					refresh <- true
 				case "delete":
-
+					refresh <- true
 				}
+
 				return nil
 			}, func(ctx context.Context, conn *net.TCPConn) error {
 				logger.Info("CloseCb ----------- ")
@@ -146,7 +159,7 @@ func (this *s2sClient) onStart() {
 			i++
 			logger.Info("ReadFromTcp start reconnect!", zap.Any("times", i))
 			time.Sleep(2 * time.Second)
-			S2sClient().Connect()
+			TcpS2s().Connect()
 		}
 
 		return

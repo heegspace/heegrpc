@@ -2,6 +2,7 @@
 package registry
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"time"
 
@@ -66,4 +67,14 @@ func getsysinfo() string {
 	sysinfo.Ips = addr.IPs()
 	info, _ := json.Marshal(sysinfo)
 	return string(info)
+}
+
+func getRandomTag() string {
+	alphanum := "0123456789"
+	var bytes = make([]byte, 32)
+	rand.Read(bytes)
+	for i, b := range bytes {
+		bytes[i] = alphanum[b%byte(len(alphanum))]
+	}
+	return string(bytes)
 }
