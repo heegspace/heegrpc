@@ -468,7 +468,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 	services = make(map[string][]*registry.Service)
 	if TcpS2s().enable() {
 		var req StreamReq
-		req.Cmd = "gets"
+		req.Cmd = "get"
 		req.Data = s2sname
 		req.Tag = getRandomTag()
 		buf := &bytes.Buffer{}
