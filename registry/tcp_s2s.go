@@ -111,8 +111,9 @@ func (this *proxy) onStart() {
 				err = dec.Decode(&res)
 				if nil != err {
 					logger.Error("ReadFromTcp err", zap.Error(err))
-
-					return
+					
+					time.Sleep(2 * time.Second)
+					continue
 				}
 
 				logger.Info("ReadFromTcp ", zap.Any("size", size), zap.Any("res", res))

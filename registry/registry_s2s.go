@@ -89,6 +89,8 @@ func newRegistry(opts ...registry.Option) registry.Registry {
 
 		TcpS2s().Connect()
 		go gs.crontab()
+		gs.onStart()
+
 		configure(gs, opts...)
 	}
 
@@ -124,7 +126,6 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 		return err
 	}
 
-	var gerr error
 	if TcpS2s().enable() {
 		var req StreamReq
 		req.Cmd = "update"
@@ -139,6 +140,8 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 
 		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
 		if nil != err {
+			logger.Error("Register err", zap.Error(err))
+
 			return err
 		}
 
@@ -146,6 +149,7 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 		return nil
 	}
 
+	var gerr error
 	for _, addr := range s.opts.Addrs {
 		scheme := "http"
 		if s.opts.Secure {
