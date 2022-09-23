@@ -140,7 +140,7 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 		req.Extra = make(map[string]string)
 		if !s.first {
 			req.Extra["first"] = "first"
-			
+
 			s.first = true
 		}
 
@@ -151,10 +151,13 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 			return err
 		}
 
+register:
 		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
 		if nil != err {
 			logger.Error("Register err", zap.Error(err))
 			TcpS2s().Connect()
+			req.Extra["first"] = "first"
+			goto register
 
 			return err
 		}
