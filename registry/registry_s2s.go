@@ -390,19 +390,19 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 				result = msg
 			}
 		case <-time.After(time.Millisecond * time.Duration(300)):
-			logger.Debug("getService wait response timeout!", zap.Any("s2sname", service))
+			logger.Error("getService wait response timeout!", zap.Any("s2sname", service))
 
 			return nil, errors.New("getService " + service + " timeout!")
 		}
 
 		if len(result) == 0 {
-			logger.Debug("getService wait response return empty!")
+			logger.Error("getService wait response return empty!")
 
 			return nil, errors.New("Didn't node info")
 		}
 
 		if err := json.Unmarshal([]byte(result), &services); err != nil {
-			logger.Debug("getService Unmarshal err!", zap.Any("result", result), zap.Error(err))
+			logger.Error("getService Unmarshal err!", zap.Any("result", result), zap.Error(err))
 
 			return nil, err
 		}
@@ -500,13 +500,13 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 				result = msg
 			}
 		case <-time.After(time.Millisecond * time.Duration(300)):
-			logger.Debug("getService wait response timeout!", zap.Any("s2sname", s2sname))
+			logger.Error("getService wait response timeout!", zap.Any("s2sname", s2sname))
 
 			return nil, errors.New("getServices " + s2sname + " timeout!")
 		}
 
 		if len(result) == 0 {
-			logger.Debug("getService wait response return empty!")
+			logger.Error("getService wait response return empty!")
 
 			return nil, errors.New("getServices Didn't node info")
 		}
@@ -515,7 +515,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 		if 1 == len(svrs) {
 			var serv []*registry.Service
 			if err = json.Unmarshal([]byte(result), &serv); err != nil {
-				logger.Debug("getServices Unmarshal err!", zap.Any("result", result), zap.Error(err))
+				logger.Error("getServices Unmarshal err!", zap.Any("result", result), zap.Error(err))
 
 				return nil, err
 			}
@@ -523,13 +523,13 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 			services[s2sname] = serv
 		} else {
 			if err = json.Unmarshal([]byte(result), &services); err != nil {
-				logger.Debug("getServices Unmarshal err!", zap.Any("result", result), zap.Error(err))
+				logger.Error("getServices Unmarshal err!", zap.Any("result", result), zap.Error(err))
 
 				return nil, err
 			}
 		}
 
-		logger.Debug("getServices success", zap.Any("services", services))
+		logger.Error("getServices success", zap.Any("services", services))
 		return services, nil
 	}
 
@@ -591,7 +591,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 //
 func (s *proxy) crontab() {
 	fn := func() {
-		logger.Debug("crontab update", zap.Any("size", len(watchNode.watchType)))
+		logger.Error("crontab update", zap.Any("size", len(watchNode.watchType)))
 		if 0 == len(watchNode.watchType) {
 			return
 		}

@@ -116,7 +116,7 @@ func (this *proxy) onStart() {
 					return
 				}
 
-				logger.Info("ReadFromTcp start", zap.Any("size", size), zap.Any("cmd", res.Cmd), zap.Any("code", res.Code))
+				logger.Debug("ReadFromTcp start", zap.Any("size", size), zap.Any("cmd", res.Cmd), zap.Any("code", res.Code))
 				if "notify" != res.Cmd {
 					switch res.Cmd {
 					case "update":
