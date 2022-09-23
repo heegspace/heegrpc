@@ -31,6 +31,8 @@ type proxy struct {
 	refresh chan bool
 	upch    map[string]chan string
 	chlock  sync.RWMutex
+
+	first bool
 }
 
 var watchNode []string
@@ -85,6 +87,7 @@ func newRegistry(opts ...registry.Option) registry.Registry {
 			upch:    make(map[string]chan string),
 			refresh: make(chan bool, 2),
 			chlock:   sync.RWMutex{},
+			first: false,
 		}
 
 		if TcpS2s().enable() {
@@ -134,6 +137,13 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 		req.Cmd = "update"
 		req.Data = string(b)
 		req.Tag = getRandomTag()
+		req.Extra = make(map[string]string)
+		if !s.first {
+			req.Extra["first"] = "first"
+			
+			s.first = true
+		}
+
 		buf := &bytes.Buffer{}
 		enc := gob.NewEncoder(buf)
 		err := enc.Encode(req)
@@ -145,7 +155,7 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 		if nil != err {
 			logger.Error("Register err", zap.Error(err))
 			TcpS2s().Connect()
-			
+
 			return err
 		}
 
@@ -491,6 +501,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 			}
 		}
 
+		logger.Debug("getServices success", zap.Any("services", services))
 		return services, nil
 	}
 

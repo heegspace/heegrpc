@@ -19,6 +19,7 @@ type StreamReq struct {
 	Cmd  string `json:"cmd"`
 	Data string `json:"data"`
 	Tag  string `json:"tag"`
+	Extra map[string]string `json:"extra"`
 }
 
 type StreamRes struct {
