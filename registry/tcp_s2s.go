@@ -116,6 +116,7 @@ func (this *proxy) onStart() {
 					return
 				}
 
+				logger.Info("ReadFromTcp start", zap.Any("size", size), zap.Any("cmd", res.Cmd), zap.Any("code", res.Code))
 				if "notify" != res.Cmd {
 					switch res.Cmd {
 					case "update":
@@ -149,6 +150,7 @@ func (this *proxy) onStart() {
 					this.refresh <- true
 				}
 
+				logger.Info("ReadFromTcp refresh", zap.Any("size", size), zap.Any("cmd", res.Cmd), zap.Any("code", res.Code))
 				return nil
 			}, func(ctx context.Context, conn *net.TCPConn) error {
 				logger.Info("CloseCb ----------- ")

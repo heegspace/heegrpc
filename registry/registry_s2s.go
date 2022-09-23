@@ -590,11 +590,12 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 // 刷新订阅的s2s信息
 //
 func (s *proxy) crontab() {
-	if 0 == len(watchNode.watchType) {
-		return
-	}
-
 	fn := func() {
+		logger.Debug("crontab update", zap.Any("size", len(watchNode.watchType)))
+		if 0 == len(watchNode.watchType) {
+			return
+		}
+
 		names := strings.Join(watchNode.watchType, ",")
 		svrs, err := s.getServices(names)
 		if nil != err {
