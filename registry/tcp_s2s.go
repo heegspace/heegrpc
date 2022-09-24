@@ -73,24 +73,10 @@ func (this *tcpS2s) GetConn() *net.TCPConn {
 	return this.conn
 }
 
-func (this *tcpS2s) reset() {
-	this.rwlock.Lock()
-	this.conn = nil
-	this.rwlock.Unlock()
-}
-
 func (this *tcpS2s) Connect() {
 	if len(this.addr) == 0 {
 		return
 	}
-
-	this.rwlock.RLock()
-	if nil != this.conn {
-		this.rwlock.RUnlock()
-
-		return
-	}
-	this.rwlock.RUnlock()
 
 	for {
 		tcpAddr, err := net.ResolveTCPAddr("tcp4", this.addr)

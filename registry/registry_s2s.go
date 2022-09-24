@@ -242,6 +242,7 @@ func (s *proxy) Deregister(service *registry.Service, opts ...registry.Deregiste
 		if nil != err {
 			logger.Error("Deregister WriteToConnections err", zap.Error(err))
 			TcpS2s().Connect()
+
 			goto register
 		}
 
@@ -373,8 +374,6 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
 		if nil != err {
 			logger.Error("getService WriteToConnections err", zap.Error(err))
-			TcpS2s().reset()
-			time.Sleep(2 * time.Second)
 
 			TcpS2s().Connect()
 			goto register
