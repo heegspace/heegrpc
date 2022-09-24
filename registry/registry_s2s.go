@@ -241,8 +241,8 @@ func (s *proxy) Deregister(service *registry.Service, opts ...registry.Deregiste
 		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
 		if nil != err {
 			logger.Error("Deregister WriteToConnections err", zap.Error(err))
-			TcpS2s().Connect()
 
+			TcpS2s().Connect()
 			goto register
 		}
 
@@ -321,7 +321,7 @@ func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*regis
 		return item, nil
 	}
 
-	logger.Debug(service, " node cache not exists.")
+	logger.Info(service, " node cache not exists.")
 	return s.getService(service)
 }
 
@@ -490,6 +490,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
 		if nil != err {
 			logger.Error("getServices WriteToConnections  err", zap.Error(err))
+
 			TcpS2s().Connect()
 			goto register
 		}
@@ -541,7 +542,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 			}
 		}
 
-		logger.Debug("getServices success", zap.Any("services", services))
+		logger.Info("getServices success", zap.Any("services", services))
 		return services, nil
 	}
 
@@ -603,7 +604,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 //
 func (s *proxy) crontab() {
 	fn := func() {
-		logger.Debug("crontab update", zap.Any("size", len(watchNode.watchType)))
+		logger.Info("crontab update", zap.Any("size", len(watchNode.watchType)))
 		if 0 == len(watchNode.watchType) {
 			return
 		}
