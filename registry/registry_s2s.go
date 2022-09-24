@@ -377,7 +377,7 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 			goto register
 		}
 
-		// wait response, timeout 300ms
+		// wait response, timeout 400ms
 		result := ""
 		s.chlock.Lock()
 		s.upch[req.Tag] = make(chan string, 1)
@@ -393,7 +393,7 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 			if ok {
 				result = msg
 			}
-		case <-time.After(time.Millisecond * time.Duration(300)):
+		case <-time.After(time.Millisecond * time.Duration(400)):
 			logger.Error("getService wait response timeout!", zap.Any("s2sname", service), zap.Any("req", req))
 
 			return nil, errors.New("getService " + service + " timeout!")
@@ -492,7 +492,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 			goto register
 		}
 
-		// wait response, timeout 300ms
+		// wait response, timeout 400ms
 		result := ""
 		s.chlock.Lock()
 		s.upch[req.Tag] = make(chan string, 1)
@@ -508,7 +508,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 			if ok {
 				result = msg
 			}
-		case <-time.After(time.Millisecond * time.Duration(300)):
+		case <-time.After(time.Millisecond * time.Duration(400)):
 			endAt := time.Now().UnixNano()
 			logger.Warn("getService wait response timeout!", zap.Any("s2sname", s2sname), zap.Any("tag", req.Tag), zap.Any("delay", endAt-startAt))
 
