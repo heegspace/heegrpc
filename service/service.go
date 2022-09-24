@@ -164,10 +164,6 @@ func NewClient() client.Client {
 // 获取服务对象
 //
 func NewService() micro.Service {
-	if heegapo.DefaultApollo.Config("heegspace.common.yaml", "debug").Bool() {
-		logger.WithLevel(logger.DebugLevel)
-	}
-
 	svr_name = config.Get("name").String("")
 	hystrixsrc.DefaultTimeout = heegapo.DefaultApollo.Config("heegspace.common.yaml", "timeout").Int(3) * 1000
 
@@ -231,10 +227,6 @@ func NewService() micro.Service {
 // 获取没有上报metrics的服务对象
 //
 func NewServiceNoMetrics() micro.Service {
-	if heegapo.DefaultApollo.Config("heegspace.common.yaml", "debug").Bool() {
-		logger.WithLevel(logger.DebugLevel)
-	}
-
 	svr_name = config.Get("name").String("")
 	hystrixsrc.DefaultTimeout = heegapo.DefaultApollo.Config("heegspace.common.yaml", "timeout").Int(3) * 1000
 
@@ -296,10 +288,6 @@ func NewServiceNoMetrics() micro.Service {
 // @return micro.Service
 //
 func HttpService(router *gin.Engine) micro.Service {
-	if heegapo.DefaultApollo.Config("heegspace.common.yaml", "debug").Bool() {
-		logger.WithLevel(logger.DebugLevel)
-	}
-
 	svr_name = config.Get("name").String("")
 	hystrixsrc.DefaultTimeout = heegapo.DefaultApollo.Config("heegspace.common.yaml", "timeout").Int(3) * 1000
 
@@ -394,10 +382,6 @@ func HttpCodec(contentType string) (codec Codec, err error) {
 // @return Client
 //
 func HttpClient() client.Client {
-	if heegapo.DefaultApollo.Config("heegspace.common.yaml", "debug").Bool() {
-		logger.WithLevel(logger.DebugLevel)
-	}
-
 	regis := s2s.NewRegistry(
 		registry.Addrs(heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "address").String("")),
 		registry.Secure(heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "secure").Bool()),
