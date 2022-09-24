@@ -627,8 +627,13 @@ func (s *proxy) crontab() {
 		}
 	}
 
+	timer := 10
+	if TcpS2s().enable() {
+		timer = 60
+	}
+
 	// 10s定时刷新订阅的服务信息
-	ticker := time.NewTicker(time.Second * 10)
+	ticker := time.NewTicker(time.Second * time.Duration(timer))
 	for {
 		select {
 		case <-ticker.C:

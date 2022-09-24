@@ -44,6 +44,8 @@ func TcpS2s() *tcpS2s {
 		addr := ""
 		ip := heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "tcp_ip").String("")
 		port := heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "tcp_port").Int64(-1)
+		logger.Debug("TcpS2s", zap.Any("ip", ip), zap.Any("port", port))
+
 		if len(ip) != 0 && 0 < port {
 			addr = fmt.Sprintf("%s:%d", ip, port)
 		}
