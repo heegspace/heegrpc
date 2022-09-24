@@ -88,7 +88,7 @@ func (this *tcpS2s) Connect() {
 		tcpAddr, err := net.ResolveTCPAddr("tcp4", this.addr)
 		conn, err := net.DialTCP("tcp", nil, tcpAddr)
 		if err != nil {
-			logger.Warn("Connect to s2s fail, 2s reconnected!")
+			logger.Error("Connect to s2s fail, 2s reconnected!", zap.Error(err))
 
 			time.Sleep(2 * time.Second)
 			continue
@@ -122,7 +122,7 @@ func (s *proxy) onStart() {
 					return
 				}
 
-				logger.Warn("ReadFromTcp start", zap.Any("size", size), zap.Any("cmd", res.Cmd), zap.Any("code", res.Code), zap.Any("tag", res.Tag))
+				logger.Debug("ReadFromTcp start", zap.Any("size", size), zap.Any("cmd", res.Cmd), zap.Any("code", res.Code), zap.Any("tag", res.Tag))
 				if "notify" != res.Cmd {
 					switch res.Cmd {
 					case "update":
@@ -156,17 +156,18 @@ func (s *proxy) onStart() {
 					s.refresh <- true
 				}
 
-				logger.Warn("ReadFromTcp refresh", zap.Any("size", size), zap.Any("cmd", res.Cmd), zap.Any("code", res.Code))
+				logger.Debug("ReadFromTcp refresh", zap.Any("size", size), zap.Any("cmd", res.Cmd), zap.Any("code", res.Code))
 				return nil
 			}, func(ctx context.Context, conn *net.TCPConn) error {
-				logger.Warn("CloseCb ----------- ")
+				logger.Warn("s2s connected closed! start retry!")
 				TcpS2s().reset()
 
 				return nil
 			})
 
 			i++
-			logger.Info("ReadFromTcp start reconnect!", zap.Any("times", i))
+			logger.Debug("ReadFromTcp start reconnect!", zap.Any("times", i))
+
 			time.Sleep(2 * time.Second)
 			TcpS2s().Connect()
 		}
