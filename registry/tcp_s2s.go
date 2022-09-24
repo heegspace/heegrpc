@@ -87,6 +87,7 @@ func (this *tcpS2s) Connect() {
 	this.rwlock.RLock()
 	if nil != this.conn {
 		this.rwlock.RUnlock()
+
 		return
 	}
 	this.rwlock.RUnlock()
