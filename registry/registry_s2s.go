@@ -467,6 +467,8 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 		return nil, errors.New("Service name is nil")
 	}
 
+	startAt := time.Now().UnixNano()
+
 	// tcp
 	var services map[string][]*registry.Service
 	services = make(map[string][]*registry.Service)
@@ -507,7 +509,8 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 				result = msg
 			}
 		case <-time.After(time.Millisecond * time.Duration(300)):
-			logger.Debug("getService wait response timeout!", zap.Any("s2sname", s2sname))
+			endAt := time.Now().UnixNano()
+			logger.Warn("getService wait response timeout!", zap.Any("s2sname", s2sname), zap.Any("tag", req.Tag), zap.Any("delay", endAt-startAt))
 
 			return nil, errors.New("getServices " + s2sname + " timeout!")
 		}
