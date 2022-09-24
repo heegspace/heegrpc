@@ -33,9 +33,6 @@ type tcpS2s struct {
 	conn   *net.TCPConn
 	rwlock sync.RWMutex
 
-	relock sync.RWMutex
-	recon  chan int
-
 	addr string
 }
 
@@ -53,7 +50,6 @@ func TcpS2s() *tcpS2s {
 		if nil == g_s2sCli {
 			g_s2sCli = &tcpS2s{
 				rwlock: sync.RWMutex{},
-				relock: sync.RWMutex{},
 				addr:   addr,
 			}
 		}
@@ -77,29 +73,23 @@ func (this *tcpS2s) GetConn() *net.TCPConn {
 	return this.conn
 }
 
+func (this *tcpS2s) reset() {
+	this.rwlock.Lock()
+	this.conn = nil
+	this.rwlock.Unlock()
+}
+
 func (this *tcpS2s) Connect() {
 	if len(this.addr) == 0 {
 		return
 	}
 
-	{
-		this.relock.RLock()
-		if nil != this.recon {
-			select {
-			case <-this.recon:
-				logger.Warn("Connect repeat connect return!")
-
-				return
-			}
-		}
-		this.relock.RUnlock()
-
-		this.relock.Lock()
-		if nil == this.recon {
-			this.recon = make(chan int)
-		}
-		this.relock.Unlock()
+	this.rwlock.RLock()
+	if nil != this.conn {
+		this.rwlock.RUnlock()
+		return
 	}
+	this.rwlock.RUnlock()
 
 	for {
 		tcpAddr, err := net.ResolveTCPAddr("tcp4", this.addr)
@@ -117,10 +107,6 @@ func (this *tcpS2s) Connect() {
 		break
 	}
 
-	close(this.recon)
-	this.relock.Lock()
-	this.recon = nil
-	this.relock.Unlock()
 	logger.Info("Connect to s2s success!")
 }
 

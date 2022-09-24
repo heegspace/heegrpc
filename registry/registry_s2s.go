@@ -373,6 +373,7 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
 		if nil != err {
 			logger.Error("getService WriteToConnections err", zap.Error(err))
+			TcpS2s().reset()
 			TcpS2s().Connect()
 
 			goto register
