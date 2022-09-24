@@ -73,6 +73,12 @@ func (this *tcpS2s) GetConn() *net.TCPConn {
 	return this.conn
 }
 
+func (this *tcpS2s) reset() {
+	this.rwlock.Lock()
+	this.conn = nil
+	this.rwlock.Unlock()
+}
+
 func (this *tcpS2s) Connect() {
 	if len(this.addr) == 0 {
 		return
@@ -97,7 +103,7 @@ func (this *tcpS2s) Connect() {
 	logger.Info("Connect to s2s success!")
 }
 
-func (this *proxy) onStart() {
+func (s *proxy) onStart() {
 	if !TcpS2s().enable() {
 		return
 	}
@@ -116,7 +122,7 @@ func (this *proxy) onStart() {
 					return
 				}
 
-				logger.Warn("ReadFromTcp start", zap.Any("size", size), zap.Any("cmd", res.Cmd), zap.Any("code", res.Code))
+				logger.Warn("ReadFromTcp start", zap.Any("size", size), zap.Any("cmd", res.Cmd), zap.Any("code", res.Code), zap.Any("tag", res.Tag))
 				if "notify" != res.Cmd {
 					switch res.Cmd {
 					case "update":
@@ -124,18 +130,18 @@ func (this *proxy) onStart() {
 					case "delete":
 
 					case "get":
-						this.chlock.RLock()
-						if _, ok := this.upch[res.Tag]; ok {
-							this.upch[res.Tag] <- res.Data
+						s.chlock.RLock()
+						if _, ok := s.upch[res.Tag]; ok {
+							s.upch[res.Tag] <- res.Data
 						}
-						this.chlock.RUnlock()
+						s.chlock.RUnlock()
 
 					case "gets":
-						this.chlock.RLock()
-						if _, ok := this.upch[res.Tag]; ok {
-							this.upch[res.Tag] <- res.Data
+						s.chlock.RLock()
+						if _, ok := s.upch[res.Tag]; ok {
+							s.upch[res.Tag] <- res.Data
 						}
-						this.chlock.RUnlock()
+						s.chlock.RUnlock()
 					}
 
 					return
@@ -145,15 +151,16 @@ func (this *proxy) onStart() {
 				// 收到通知重新获取节点信息
 				switch res.Code {
 				case "update":
-					this.refresh <- true
+					s.refresh <- true
 				case "delete":
-					this.refresh <- true
+					s.refresh <- true
 				}
 
 				logger.Warn("ReadFromTcp refresh", zap.Any("size", size), zap.Any("cmd", res.Cmd), zap.Any("code", res.Code))
 				return nil
 			}, func(ctx context.Context, conn *net.TCPConn) error {
-				logger.Info("CloseCb ----------- ")
+				logger.Warn("CloseCb ----------- ")
+				TcpS2s().reset()
 
 				return nil
 			})
