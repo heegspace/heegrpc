@@ -78,3 +78,9 @@ func getRandomTag() string {
 	}
 	return string(bytes)
 }
+
+func toJson(obj interface{}) string {
+	data, _ := json.Marshal(&obj)
+
+	return string(data)
+}

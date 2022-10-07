@@ -542,7 +542,7 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 			}
 		}
 
-		logger.Debug("getServices success", zap.Any("s2sname", s2sname), zap.Any("services", services))
+		logger.Debug("getServices success", zap.Any("s2sname", s2sname), zap.Any("services", toJson(services)))
 		return services, nil
 	}
 
