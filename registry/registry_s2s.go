@@ -299,8 +299,6 @@ func (s *proxy) Deregister(service *registry.Service, opts ...registry.Deregiste
 //
 func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*registry.Service, error) {
 	if 0 == len(service) {
-		logger.Info("service", service)
-
 		return nil, errors.New("Service name is nil")
 	}
 
@@ -318,10 +316,11 @@ func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*regis
 			item = append(item, &svr)
 		}
 
+		logger.Debug("GetService node exists", zap.Any("name", service), zap.Any("nodes", toJson(item)))
 		return item, nil
 	}
 
-	logger.Info("GetService node not exists", zap.Any("name", service))
+	logger.Debug("GetService node not exists", zap.Any("name", service))
 	return s.getService(service)
 }
 
