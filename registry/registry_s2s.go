@@ -342,7 +342,7 @@ func (s *proxy) Watch(opts ...registry.WatchOption) (registry.Watcher, error) {
 }
 
 func (s *proxy) String() string {
-	return "proxy"
+	return "s2s_proxy"
 }
 
 // 根据服务名获取服务列表
@@ -603,7 +603,8 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 //
 func (s *proxy) crontab() {
 	fn := func() {
-		logger.Debug("crontab update", zap.Any("size", len(watchNode.watchType)))
+		logger.Debug("crontab update", zap.Any("watchNode", watchNode.watchType), zap.Any("size", len(watchNode.watchType)))
+
 		if 0 == len(watchNode.watchType) {
 			return
 		}

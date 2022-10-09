@@ -170,7 +170,7 @@ func NewService() micro.Service {
 	// Create a new service. Optionally include some options here.
 	// 设置限流，设置能同时处理的请求数，超过这个数就不继续处理
 	br := ratelimit.NewBucketWithRate(heegapo.DefaultApollo.Config("heegspace.common.yaml", "rate").Float64(1000),
-		heegapo.DefaultApollo.Config("heegspace.common.yaml", "rate").Int64(1000+200))
+		heegapo.DefaultApollo.Config("heegspace.common.yaml", "rate").Int64(1000)+200)
 
 	regis := s2s.NewRegistry(
 		registry.Addrs(heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "address").String("")),
@@ -210,11 +210,8 @@ func NewService() micro.Service {
 			regis.Deregister(s2s.GetDeregister().LocalSvr)
 
 			// 等待3秒结束
-			logger.Info("Waitting 3 seconed over!")
-			for i := 0; i < 3; i++ {
-				logger.Info("Waitting 3 seconed over! ........ ", 3-i)
-				time.Sleep(1 * time.Second)
-			}
+			logger.Info("Waitting 1 seconed over!")
+			time.Sleep(1 * time.Second)
 
 			return nil
 		}),
@@ -269,11 +266,8 @@ func NewServiceNoMetrics() micro.Service {
 			regis.Deregister(s2s.GetDeregister().LocalSvr)
 
 			// 等待3秒结束
-			logger.Info("Waitting 3 seconed over!")
-			for i := 0; i < 3; i++ {
-				logger.Info("Waitting 3 seconed over! ........ ", 3-i)
-				time.Sleep(1 * time.Second)
-			}
+			logger.Info("Waitting 1 seconed over!")
+			time.Sleep(1 * time.Second)
 
 			return nil
 		}),
@@ -340,11 +334,8 @@ func HttpService(router *gin.Engine) micro.Service {
 
 			// 等待3秒结束
 			regis.Deregister(s2s.GetDeregister().LocalSvr)
-			logger.Info("Waitting 3 seconed over!")
-			for i := 0; i < 3; i++ {
-				logger.Info("Waitting 3 seconed over! ........ ", 3-i)
-				time.Sleep(1 * time.Second)
-			}
+			logger.Info("Waitting 1 seconed over!")
+			time.Sleep(1 * time.Second)
 
 			return nil
 		}),
