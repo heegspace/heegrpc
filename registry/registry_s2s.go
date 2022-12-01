@@ -394,7 +394,7 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 			if ok {
 				result = msg
 			}
-		case <-time.After(time.Millisecond * time.Duration(400)):
+		case <-time.After(time.Millisecond * time.Duration(1000)):
 			logger.Error("getService wait response timeout!", zap.Any("s2sname", service), zap.Any("req", req))
 
 			return nil, errors.New("getService " + service + " timeout!")
