@@ -57,7 +57,7 @@ func (obj response) String() string {
 	return str
 }
 
-func cronGc() {
+func gcGo() {
 	fn := func() {
 		gcMem := uint64(1024 * 1024) // 1g
 		var m runtime.MemStats
@@ -72,14 +72,16 @@ func cronGc() {
 		return
 	}
 
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			fn()
+	go func() {
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				fn()
+			}
 		}
-	}
+	}()
 }
 
 // 客户端调用追踪
@@ -244,7 +246,7 @@ func NewService() micro.Service {
 	)
 
 	svr.Init()
-	cronGc()
+	gcGo()
 	return svr
 }
 
@@ -301,7 +303,7 @@ func NewServiceNoMetrics() micro.Service {
 	)
 
 	svr.Init()
-	cronGc()
+	gcGo()
 	return svr
 }
 
@@ -370,7 +372,7 @@ func HttpService(router *gin.Engine) micro.Service {
 	)
 
 	svrice.Init()
-	cronGc()
+	gcGo()
 	return svrice
 }
 
