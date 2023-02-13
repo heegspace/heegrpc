@@ -3,6 +3,7 @@ package registry
 
 import (
 	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,83 +15,53 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/disk"
-	"github.com/shirou/gopsutil/v3/host"
-	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/heegspace/appcom"
 	"go-micro.dev/v4/cmd"
 	"go-micro.dev/v4/logger"
 	"go-micro.dev/v4/registry"
-	"go-micro.dev/v4/util/addr"
+	"go.uber.org/zap"
 )
-
-type SysInfo struct {
-	HostName   string   `json:"hostname,omitempty"`
-	OS         string   `json:"os,omitempty"`
-	CpuNum     int      `json:"cpu_num,omitempty"`
-	CpuPercent float64  `json:"cpu_percent,omitempty"`
-	MemTotal   uint64   `json:"mem_total,omitempty"`
-	MemUsed    uint64   `json:"mem_used,omitempty"`
-	DiskTotal  uint64   `json:"disk_total,omitempty"`
-	DiskUsed   uint64   `json:"disk_used,omitempty"`
-	Ips        []string `json:"ips,omitempty"`
-}
-
-func getsysinfo() string {
-	var sysinfo SysInfo
-
-	hostinfo, err := host.Info()
-	if nil == err {
-		sysinfo.HostName = hostinfo.Hostname
-		sysinfo.OS = hostinfo.OS
-	}
-
-	count, err := cpu.Counts(true)
-	if nil == err {
-		sysinfo.CpuNum = count
-	}
-
-	percent, err := cpu.Percent(time.Second, false)
-	if nil == err && 0 < len(percent) {
-		sysinfo.CpuPercent = percent[0]
-	}
-
-	memInfo, err := mem.VirtualMemory()
-	if nil == err && nil != memInfo {
-		sysinfo.MemTotal = memInfo.Total
-		sysinfo.MemUsed = memInfo.Used
-	}
-
-	parts, err := disk.Partitions(true)
-	if nil == err && 0 < len(parts) {
-		for _, v := range parts {
-			diskInfo, err := disk.Usage(v.Mountpoint)
-			if nil != err {
-				continue
-			}
-
-			sysinfo.DiskTotal = sysinfo.DiskTotal + diskInfo.Total
-			sysinfo.DiskUsed = sysinfo.DiskUsed + diskInfo.Used
-		}
-
-	}
-
-	sysinfo.Ips = addr.IPs()
-	info, _ := json.Marshal(sysinfo)
-	return string(info)
-}
 
 type proxy struct {
 	opts registry.Options
 
 	rwlock sync.RWMutex
 	svrs   map[string][]*registry.Service
+
+	refresh chan bool
+	upch    map[string]chan string
+	chlock  sync.RWMutex
+
+	first bool
 }
 
-var watchNode []string
+type watchType = []string
+type WatchNode struct {
+	watchType
+
+	lock sync.RWMutex
+}
+
+func (w *WatchNode) Add(obj string) {
+	w.lock.Lock()
+	defer w.lock.Unlock()
+
+	for _, v := range w.watchType {
+		if v == obj {
+			return
+		}
+	}
+
+	w.watchType = append(w.watchType, obj)
+}
+
+func (w *WatchNode) Nodes() []string {
+	return w.watchType
+}
+
+var watchNode WatchNode
 
 func init() {
-	watchNode = make([]string, 0)
 	cmd.DefaultRegistries["proxy"] = NewRegistry
 }
 
@@ -104,7 +75,7 @@ func SetWatchNode(nodes []string) {
 	}
 
 	for _, v := range nodes {
-		watchNode = append(watchNode, v)
+		watchNode.Add(v)
 	}
 
 	return
@@ -123,6 +94,7 @@ func configure(s *proxy, opts ...registry.Option) error {
 	if len(addrs) == 0 {
 		addrs = []string{"localhost:8081"}
 	}
+
 	registry.Addrs(addrs...)(&s.opts)
 	return nil
 }
@@ -132,12 +104,22 @@ var gs *proxy
 func newRegistry(opts ...registry.Option) registry.Registry {
 	if nil == gs {
 		gs = &proxy{
-			opts:   registry.Options{},
-			rwlock: sync.RWMutex{},
-			svrs:   make(map[string][]*registry.Service),
+			opts:    registry.Options{},
+			rwlock:  sync.RWMutex{},
+			svrs:    make(map[string][]*registry.Service),
+			upch:    make(map[string]chan string),
+			refresh: make(chan bool, 2),
+			chlock:  sync.RWMutex{},
+			first:   false,
 		}
 
-		go gs.refresh()
+		if TcpS2s().enable() {
+			TcpS2s().Connect()
+			gs.onStart()
+		}
+
+		go gs.crontab()
+
 		configure(gs, opts...)
 	}
 
@@ -171,6 +153,38 @@ func (s *proxy) Register(service *registry.Service, opts ...registry.RegisterOpt
 	b, err := json.Marshal(service)
 	if err != nil {
 		return err
+	}
+
+	if TcpS2s().enable() {
+		var req StreamReq
+		req.Cmd = "update"
+		req.Data = string(b)
+		req.Tag = getRandomTag()
+		req.Extra = make(map[string]string)
+		if !s.first {
+			req.Extra["first"] = "first"
+
+			s.first = true
+		}
+
+		buf := &bytes.Buffer{}
+		enc := gob.NewEncoder(buf)
+		err := enc.Encode(req)
+		if nil != err {
+			return err
+		}
+
+	register:
+		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
+		if nil != err {
+			logger.Error("Register err", zap.Error(err))
+			TcpS2s().Connect()
+			req.Extra["first"] = "first"
+			goto register
+		}
+
+		GetDeregister().LocalSvr = service
+		return nil
 	}
 
 	var gerr error
@@ -210,6 +224,33 @@ func (s *proxy) Deregister(service *registry.Service, opts ...registry.Deregiste
 		return err
 	}
 
+	// tcp
+	if TcpS2s().enable() {
+		var req StreamReq
+		req.Cmd = "delete"
+		req.Data = string(b)
+		req.Tag = getRandomTag()
+		buf := &bytes.Buffer{}
+		enc := gob.NewEncoder(buf)
+		err := enc.Encode(req)
+		if nil != err {
+			return err
+		}
+
+	register:
+		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
+		if nil != err {
+			logger.Error("Deregister WriteToConnections err", zap.Error(err))
+
+			TcpS2s().Connect()
+			goto register
+		}
+
+		GetDeregister().De()
+		return nil
+	}
+
+	// http
 	var gerr error
 	for _, addr := range s.opts.Addrs {
 		scheme := "http"
@@ -242,10 +283,12 @@ func (s *proxy) Deregister(service *registry.Service, opts ...registry.Deregiste
 
 		io.Copy(ioutil.Discard, rsp.Body)
 		rsp.Body.Close()
+
 		GetDeregister().De()
 
 		return nil
 	}
+
 	return gerr
 }
 
@@ -256,10 +299,10 @@ func (s *proxy) Deregister(service *registry.Service, opts ...registry.Deregiste
 //
 func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*registry.Service, error) {
 	if 0 == len(service) {
-		logger.Info("service", service)
-
 		return nil, errors.New("Service name is nil")
 	}
+
+	watchNode.Add(service)
 
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
@@ -273,10 +316,11 @@ func (s *proxy) GetService(service string, opts ...registry.GetOption) ([]*regis
 			item = append(item, &svr)
 		}
 
+		logger.Debug("GetService node exists", zap.Any("name", service), zap.Any("nodes", toJson(item)))
 		return item, nil
 	}
 
-	logger.Info(service, " node cache not exists.")
+	logger.Debug("GetService node not exists", zap.Any("name", service))
 	return s.getService(service)
 }
 
@@ -298,7 +342,7 @@ func (s *proxy) Watch(opts ...registry.WatchOption) (registry.Watcher, error) {
 }
 
 func (s *proxy) String() string {
-	return "proxy"
+	return "s2s_proxy"
 }
 
 // 根据服务名获取服务列表
@@ -311,6 +355,67 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 		return nil, errors.New("Service name is nil")
 	}
 
+	// tcp
+	var services []*registry.Service
+	if TcpS2s().enable() {
+		var req StreamReq
+		req.Cmd = "get"
+		req.Data = service
+		req.Tag = getRandomTag()
+		buf := &bytes.Buffer{}
+		enc := gob.NewEncoder(buf)
+		err := enc.Encode(req)
+		if nil != err {
+			return nil, err
+		}
+
+	register:
+		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
+		if nil != err {
+			logger.Error("getService WriteToConnections err", zap.Error(err))
+
+			TcpS2s().Connect()
+			goto register
+		}
+
+		// wait response, timeout 400ms
+		result := ""
+		s.chlock.Lock()
+		s.upch[req.Tag] = make(chan string, 1)
+		s.chlock.Unlock()
+		defer func() {
+			s.chlock.Lock()
+			close(s.upch[req.Tag])
+			delete(s.upch, req.Tag)
+			s.chlock.Unlock()
+		}()
+		select {
+		case msg, ok := <-s.upch[req.Tag]:
+			if ok {
+				result = msg
+			}
+		case <-time.After(time.Second * time.Duration(2)):
+			logger.Error("getService wait response timeout!", zap.Any("s2sname", service), zap.Any("req", req))
+
+			return nil, errors.New("getService " + service + " timeout!")
+		}
+
+		if len(result) == 0 {
+			logger.Error("getService wait response return empty!")
+
+			return nil, errors.New("Didn't node info")
+		}
+
+		if err := json.Unmarshal([]byte(result), &services); err != nil {
+			logger.Error("getService Unmarshal err!", zap.Any("result", result), zap.Error(err))
+
+			return nil, err
+		}
+
+		return services, nil
+	}
+
+	// http
 	var gerr error
 	for _, addr := range s.opts.Addrs {
 		scheme := "http"
@@ -341,7 +446,7 @@ func (s *proxy) getService(service string) ([]*registry.Service, error) {
 			continue
 		}
 		rsp.Body.Close()
-		var services []*registry.Service
+
 		if err := json.Unmarshal(b, &services); err != nil {
 			gerr = err
 			continue
@@ -363,6 +468,84 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 		return nil, errors.New("Service name is nil")
 	}
 
+	startAt := time.Now().UnixNano()
+
+	// tcp
+	var services map[string][]*registry.Service
+	services = make(map[string][]*registry.Service)
+	if TcpS2s().enable() {
+		var req StreamReq
+		req.Cmd = "get"
+		req.Data = s2sname
+		req.Tag = getRandomTag()
+		buf := &bytes.Buffer{}
+		enc := gob.NewEncoder(buf)
+		err := enc.Encode(req)
+		if nil != err {
+			return nil, err
+		}
+
+	register:
+		_, err = appcom.WriteToConnections(TcpS2s().GetConn(), buf.Bytes())
+		if nil != err {
+			logger.Error("getServices WriteToConnections  err", zap.Error(err))
+
+			TcpS2s().Connect()
+			goto register
+		}
+
+		// wait response, timeout 400ms
+		result := ""
+		s.chlock.Lock()
+		s.upch[req.Tag] = make(chan string, 1)
+		s.chlock.Unlock()
+		defer func() {
+			s.chlock.Lock()
+			close(s.upch[req.Tag])
+			delete(s.upch, req.Tag)
+			s.chlock.Unlock()
+		}()
+		select {
+		case msg, ok := <-s.upch[req.Tag]:
+			if ok {
+				result = msg
+			}
+		case <-time.After(time.Millisecond * time.Duration(400)):
+			endAt := time.Now().UnixNano()
+			logger.Warn("getService wait response timeout!", zap.Any("s2sname", s2sname), zap.Any("tag", req.Tag), zap.Any("delay", endAt-startAt))
+
+			return nil, errors.New("getServices " + s2sname + " timeout!")
+		}
+
+		if len(result) == 0 {
+			logger.Error("getService wait response return empty!")
+
+			return nil, errors.New("getServices Didn't node info")
+		}
+
+		svrs := strings.Split(s2sname, ",")
+		if 1 == len(svrs) {
+			var serv []*registry.Service
+			if err = json.Unmarshal([]byte(result), &serv); err != nil {
+				logger.Error("getServices Unmarshal err!", zap.Any("result", result), zap.Error(err))
+
+				return nil, err
+			}
+
+			services[s2sname] = serv
+		} else {
+			if err = json.Unmarshal([]byte(result), &services); err != nil {
+				logger.Error("getServices Unmarshal err!", zap.Any("result", result), zap.Error(err))
+
+				return nil, err
+			}
+		}
+
+		logger.Debug("getServices success", zap.Any("s2sname", s2sname), zap.Any("services", toJson(services)))
+		return services, nil
+	}
+
+	// http
 	var gerr error
 	for _, addr := range s.opts.Addrs {
 		scheme := "http"
@@ -393,8 +576,6 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 			continue
 		}
 		rsp.Body.Close()
-		var services map[string][]*registry.Service
-		services = make(map[string][]*registry.Service)
 
 		svrs := strings.Split(s2sname, ",")
 		if 1 == len(svrs) {
@@ -420,32 +601,45 @@ func (s *proxy) getServices(s2sname string) (map[string][]*registry.Service, err
 
 // 刷新订阅的s2s信息
 //
-func (s *proxy) refresh() {
-	if 0 == len(watchNode) {
-		return
+func (s *proxy) crontab() {
+	fn := func() {
+		logger.Debug("crontab update", zap.Any("watchNode", watchNode.watchType), zap.Any("size", len(watchNode.watchType)))
+
+		if 0 == len(watchNode.watchType) {
+			return
+		}
+
+		names := strings.Join(watchNode.watchType, ",")
+		svrs, err := s.getServices(names)
+		if nil != err {
+			logger.Error("Refresh getService err ", err)
+
+			return
+		}
+		for k, v := range svrs {
+			if 0 == len(v) {
+				continue
+			}
+
+			s.rwlock.Lock()
+			s.svrs[k] = v
+			s.rwlock.Unlock()
+		}
+	}
+
+	timer := 10
+	if TcpS2s().enable() {
+		timer = 60
 	}
 
 	// 10s定时刷新订阅的服务信息
-	ticker := time.NewTicker(time.Second * 10)
+	ticker := time.NewTicker(time.Second * time.Duration(timer))
 	for {
 		select {
 		case <-ticker.C:
-			names := strings.Join(watchNode, ",")
-			svrs, err := s.getServices(names)
-			if nil != err {
-				logger.Error("Refresh getService err ", err)
-
-				continue
-			}
-			for k, v := range svrs {
-				if 0 == len(v) {
-					continue
-				}
-
-				s.rwlock.Lock()
-				s.svrs[k] = v
-				s.rwlock.Unlock()
-			}
+			fn()
+		case <-s.refresh:
+			fn()
 		}
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -54,6 +55,33 @@ func (obj response) String() string {
 	str := fmt.Sprintf("{rescode: %v, resmsg: %v, extra: %v}", obj.rescode, obj.resmsg, obj.extra)
 
 	return str
+}
+
+func gcGo() {
+	fn := func() {
+		gcMem := uint64(1024 * 1024) // 1g
+		var m runtime.MemStats
+		runtime.ReadMemStats(&m)
+
+		alloc := m.Alloc / 1024 // kb
+		if alloc > uint64(gcMem) {
+			runtime.GC()
+
+			logger.Infof("[gc] Initiative call GC for free memory, gcMem:%d	alloc:%d", gcMem, alloc)
+		}
+		return
+	}
+
+	go func() {
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				fn()
+			}
+		}
+	}()
 }
 
 // 客户端调用追踪
@@ -170,7 +198,7 @@ func NewService() micro.Service {
 	// Create a new service. Optionally include some options here.
 	// 设置限流，设置能同时处理的请求数，超过这个数就不继续处理
 	br := ratelimit.NewBucketWithRate(heegapo.DefaultApollo.Config("heegspace.common.yaml", "rate").Float64(1000),
-		heegapo.DefaultApollo.Config("heegspace.common.yaml", "rate").Int64(1000+200))
+		heegapo.DefaultApollo.Config("heegspace.common.yaml", "rate").Int64(1000)+200)
 
 	regis := s2s.NewRegistry(
 		registry.Addrs(heegapo.DefaultApollo.Config("heegspace.common.yaml", "s2s", "address").String("")),
@@ -210,17 +238,15 @@ func NewService() micro.Service {
 			regis.Deregister(s2s.GetDeregister().LocalSvr)
 
 			// 等待3秒结束
-			logger.Info("Waitting 3 seconed over!")
-			for i := 0; i < 3; i++ {
-				logger.Info("Waitting 3 seconed over! ........ ", 3-i)
-				time.Sleep(1 * time.Second)
-			}
+			logger.Info("Waitting 1 seconed over!")
+			time.Sleep(1 * time.Second)
 
 			return nil
 		}),
 	)
 
 	svr.Init()
+	gcGo()
 	return svr
 }
 
@@ -269,17 +295,15 @@ func NewServiceNoMetrics() micro.Service {
 			regis.Deregister(s2s.GetDeregister().LocalSvr)
 
 			// 等待3秒结束
-			logger.Info("Waitting 3 seconed over!")
-			for i := 0; i < 3; i++ {
-				logger.Info("Waitting 3 seconed over! ........ ", 3-i)
-				time.Sleep(1 * time.Second)
-			}
+			logger.Info("Waitting 1 seconed over!")
+			time.Sleep(1 * time.Second)
 
 			return nil
 		}),
 	)
 
 	svr.Init()
+	gcGo()
 	return svr
 }
 
@@ -340,17 +364,15 @@ func HttpService(router *gin.Engine) micro.Service {
 
 			// 等待3秒结束
 			regis.Deregister(s2s.GetDeregister().LocalSvr)
-			logger.Info("Waitting 3 seconed over!")
-			for i := 0; i < 3; i++ {
-				logger.Info("Waitting 3 seconed over! ........ ", 3-i)
-				time.Sleep(1 * time.Second)
-			}
+			logger.Info("Waitting 1 seconed over!")
+			time.Sleep(1 * time.Second)
 
 			return nil
 		}),
 	)
 
 	svrice.Init()
+	gcGo()
 	return svrice
 }
 
