@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"reflect"
 	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"time"
 
@@ -82,6 +84,17 @@ func gcGo() {
 			}
 		}
 	}()
+}
+
+func profile(name string) {
+	f, err := os.Create(fmt.Sprintf("%s-mem-%d.mprof", time.Now().UnixNano()))
+	if nil != err {
+		return
+	}
+
+	pprof.WriteHeapProfile(f)
+	f.Close()
+	return
 }
 
 // 客户端调用追踪
@@ -231,6 +244,7 @@ func NewService() micro.Service {
 		// 服务端被调跟踪，每个请求被处理之前都会调用这个中间件函数
 		micro.WrapHandler(logWrapper),
 		micro.BeforeStop(func() error {
+			profile(svr_name)
 			if nil == s2s.GetDeregister().LocalSvr {
 				return nil
 			}
@@ -288,6 +302,7 @@ func NewServiceNoMetrics() micro.Service {
 		micro.WrapHandler(ratelimiter.NewHandlerWrapper(br, false)),
 
 		micro.BeforeStop(func() error {
+			profile(svr_name)
 			if nil == s2s.GetDeregister().LocalSvr {
 				return nil
 			}
@@ -358,6 +373,7 @@ func HttpService(router *gin.Engine) micro.Service {
 		micro.WrapClient(ratelimiter.NewClientWrapper(br, false)),
 		micro.WrapHandler(ratelimiter.NewHandlerWrapper(br, false)),
 		micro.BeforeStop(func() error {
+			profile(svr_name)
 			if nil == s2s.GetDeregister().LocalSvr {
 				return nil
 			}
