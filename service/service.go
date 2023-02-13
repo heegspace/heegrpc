@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -54,6 +55,31 @@ func (obj response) String() string {
 	str := fmt.Sprintf("{rescode: %v, resmsg: %v, extra: %v}", obj.rescode, obj.resmsg, obj.extra)
 
 	return str
+}
+
+func cronGc() {
+	fn := func() {
+		gcMem := uint64(1024 * 1024) // 1g
+		var m runtime.MemStats
+		runtime.ReadMemStats(&m)
+
+		alloc := m.Alloc / 1024 // kb
+		if alloc > uint64(gcMem) {
+			runtime.GC()
+
+			logger.Infof("[gc] Initiative call GC for free memory, gcMem:%d	alloc:%d", gcMem, alloc)
+		}
+		return
+	}
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			fn()
+		}
+	}
 }
 
 // 客户端调用追踪
@@ -218,6 +244,7 @@ func NewService() micro.Service {
 	)
 
 	svr.Init()
+	cronGc()
 	return svr
 }
 
@@ -274,6 +301,7 @@ func NewServiceNoMetrics() micro.Service {
 	)
 
 	svr.Init()
+	cronGc()
 	return svr
 }
 
@@ -342,6 +370,7 @@ func HttpService(router *gin.Engine) micro.Service {
 	)
 
 	svrice.Init()
+	cronGc()
 	return svrice
 }
 
