@@ -87,7 +87,7 @@ func gcGo() {
 }
 
 func profile(name string) {
-	f, err := os.Create(fmt.Sprintf("%s-mem-%d.mprof", time.Now().UnixNano()))
+	f, err := os.Create(fmt.Sprintf("%s-mem-%d.mprof", name, time.Now().UnixNano()))
 	if nil != err {
 		return
 	}
